@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" id="mainHtml">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IT Asset System | UEC</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+    <style>
+        :root { --blue: #003366; --gold: #C5A059; --white: #ffffff; }
+        body { font-family: 'Tajawal', sans-serif; background: #f4f7f6; margin: 0; }
+        
+        /* Login Overlay */
+        #loginOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--blue); z-index: 1000; display: flex; align-items: center; justify-content: center; color: white; }
+        .login-box { background: white; padding: 40px; border-radius: 10px; color: #333; width: 300px; text-align: center; border-top: 5px solid var(--gold); }
+        
+        header { background: var(--blue); color: white; padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid var(--gold); }
+        .container { max-width: 900px; margin: 20px auto; background: white; padding: 30px; border-radius: 12px; display: none; }
+        
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: var(--blue); }
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        
+        .signature-wrapper { border: 2px dashed #ccc; height: 150px; background: #fff; margin: 10px 0; }
+        .btn-submit { background: var(--blue); color: white; border: none; padding: 15px; width: 100%; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 1.1rem; }
+        .btn-submit:disabled { background: #ccc; }
+        
+        .audit-info { font-size: 0.8rem; background: #eee; padding: 5px 10px; border-radius: 5px; color: #555; }
+    </style>
+</head>
+<body>
+
+<div id="loginOverlay">
+    <div class="login-box">
+        <h2 style="color:var(--blue)">Login | UEC IT</h2>
+        <input type="text" id="user" placeholder="Username" style="margin-bottom:10px">
+        <input type="password" id="pass" placeholder="Password" style="margin-bottom:20px">
+        <button onclick="handleLogin()" class="btn-submit">Login</button>
+    </div>
+</div>
+
+<header>
+    <div>UNIVERSITY OF EAST CAPITAL</div>
+    <div id="adminName" class="audit-info">Not Logged In</div>
+    <button onclick="toggleLang()" id="langBtn" style="cursor:pointer; background:var(--gold); border:none; padding:5px 10px; border-radius:5px; font-weight:bold;">English</button>
+</header>
+
+<div class="container" id="mainApp">
+    <h2 id="pageTitle" style="text-align:center; color:var(--blue)">نظام إدارة العهدة والأصول</h2>
+    
+    <form id="assetForm">
+        <div class="grid">
+            <div style="grid-column: span 2">
+                <label id="lblTrans">نوع العملية</label>
+                <select id="transType">
+                    <option value="Issue">استلام عهدة (Issue)</option>
+                    <option value="Return">إرجاع عهدة (Return)</option>
+                    <option value="Transfer">نقل ملكية (Transfer)</option>
+                </select>
+            </div>
+            <div>
+                <label id="lblID">الرقم الوظيفي للموظف</label>
+                <input type="text" id="empID" required>
+            </div>
+            <div>
+                <label id="lblName">اسم الموظف</label>
+                <input type="text" id="empName" required>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div>
+                <label id="lblAsset">نوع الجهاز</label>
+                <select id="asset">
+                    <option>Laptop</option><option>MiFi</option><option>Printer</option><option>Scanner</option><option>iPad</option>
+                </select>
+            </div>
+            <div>
+                <label id="lblSN">السيريال نمبر (S/N)</label>
+                <input type="text" id="sn" required>
+            </div>
+        </div>
+
+        <label id="lblSpecs">المواصفات والملحقات</label>
+        <textarea id="specs" rows="3"></textarea>
+
+        <label id="lblSign">توقيع الموظف</label>
+        <div class="signature-wrapper">
+            <canvas id="signature-pad"></canvas>
+        </div>
+        
+        <button type="submit" id="btnSubmit" class="btn-submit">حفظ العملية</button>
+    </form>
+</div>
+
+<script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz-r35RwmB06Ydm2EkXF5P2yMpXu-d4QeeseN5QJ9UpKGNWsqQB3P27OvVT-ZjcYRtC/exec"; // ضع الرابط هنا
+    const canvas = document.getElementById('signature-pad');
+    const signaturePad = new SignaturePad(canvas);
+    let currentAdmin = "";
+    let lang = localStorage.getItem('lang') || 'ar';
+
+    // منع الريفرش وتغيير اللغة
+    window.onload = () => {
+        applyLang(lang);
+        if(sessionStorage.getItem('admin')) {
+            showApp(sessionStorage.getItem('admin'));
+        }
+    };
+
+    function handleLogin() {
+        const user = document.getElementById('user').value;
+        const pass = document.getElementById('pass').value;
+        
+        fetch(SCRIPT_URL + "?action=login", {
+            method: 'POST',
+            body: JSON.stringify({user, pass})
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.status === "success") {
+                sessionStorage.setItem('admin', data.name);
+                showApp(data.name);
+            } else { alert("Error Login!"); }
+        });
+    }
+
+    function showApp(name) {
+        currentAdmin = name;
+        document.getElementById('loginOverlay').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'block';
+        document.getElementById('adminName').innerText = "Admin: " + name;
+    }
+
+    function toggleLang() {
+        lang = lang === 'ar' ? 'en' : 'ar';
+        localStorage.setItem('lang', lang);
+        applyLang(lang);
+    }
+
+    function applyLang(l) {
+        const html = document.getElementById('mainHtml');
+        html.dir = l === 'ar' ? 'rtl' : 'ltr';
+        document.getElementById('langBtn').innerText = l === 'ar' ? 'English' : 'العربية';
+        // يمكنك إضافة باقي الترجمات هنا بنفس الطريقة
+    }
+
+    document.getElementById('assetForm').onsubmit = function(e) {
+        e.preventDefault();
+        const btn = document.getElementById('btnSubmit');
+        btn.innerText = "Saving..."; btn.disabled = true;
+
+        const payload = {
+            admin: currentAdmin,
+            trans: document.getElementById('transType').value,
+            empID: document.getElementById('empID').value,
+            empName: document.getElementById('empName').value,
+            asset: document.getElementById('asset').value,
+            sn: document.getElementById('sn').value,
+            specs: document.getElementById('specs').value,
+            signature: signaturePad.toDataURL()
+        };
+
+        fetch(SCRIPT_URL + "?action=save", {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        }).then(() => {
+            alert("Success!");
+            btn.disabled = false;
+            btn.innerText = "حفظ العملية";
+            signaturePad.clear();
+            document.getElementById('assetForm').reset();
+        });
+    };
+</script>
+</body>
+</html>
