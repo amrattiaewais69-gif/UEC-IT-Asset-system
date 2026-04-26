@@ -25,7 +25,6 @@
         #printSignatureImg { display: none; max-height: 100px; margin: 10px auto; }
         #loginOverlay { position: fixed; inset: 0; background: var(--blue); z-index: 9999; display: flex; align-items: center; justify-content: center; }
         .login-card { background: white; padding: 30px; border-radius: 15px; width: 320px; text-align: center; border-top: 6px solid var(--gold); }
-        .login-card img { max-width: 120px; height: auto; margin-bottom: 10px; }
         @media print {
             .no-print, header, #loginOverlay, button, .signature-wrapper, #searchSignaturePreview { display: none !important; }
             .container { box-shadow: none; margin: 0; width: 100%; display: block !important; border: none; }
@@ -94,9 +93,9 @@
             <div style="grid-column: span 2">
                 <label id="lblTrans">نوع العملية</label>
                 <select id="transType" onchange="checkTransfer()">
-                    <option value="Issue" id="optIssue">استلام عهدة (Issue)</option>
-                    <option value="Return" id="optReturn">إرجاع عهدة (Return)</option>
-                    <option value="Transfer" id="optTransfer">نقل ملكية (Transfer)</option>
+                    <option value="Issue">استلام عهدة (Issue)</option>
+                    <option value="Return">إرجاع عهدة (Return)</option>
+                    <option value="Transfer">نقل ملكية (Transfer)</option>
                 </select>
             </div>
             <div><label id="lblID">الرقم الوظيفي</label><input type="text" id="empID" required></div>
@@ -109,7 +108,7 @@
         <label id="lblSign" class="no-print">توقيع الموظف</label>
         <div class="signature-wrapper no-print">
             <canvas id="signature-pad"></canvas>
-            <button type="button" onclick="signaturePad.clear()" id="btnClear">Clear</button>
+            <button type="button" onclick="signaturePad.clear()" id="btnClear" style="position:absolute; bottom:8px; left:8px; background:#ff4444; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size: 0.7rem;">Clear</button>
         </div>
         <img id="printSignatureImg">
         
@@ -131,16 +130,16 @@
         ar: { 
             search: "بحث بالرقم الوظيفي", btnSearch: "بحث", btnNew: "جديد", trans: "نوع العملية", 
             id: "الرقم الوظيفي", name: "اسم الموظف", type: "نوع الجهاز", sn: "السيريال (S/N)", 
-            specs: "المواصفات", sign: "توقيع الموظف", clear: "مسح", save: "حفظ (Save)", 
-            print: "طباعة (Print)", transfer: "المستلم الجديد:", foundSig: "توقيع الموظف المسجل:",
-            noAsset: "هذا الموظف ليس لديه عهدة حالية أو تم نقلها.", notFound: "الموظف غير موجود."
+            specs: "المواصفات", sign: "توقيع الموظف", clear: "مسح", save: "حفظ البيانات", 
+            print: "طباعة", transfer: "المستلم الجديد:", foundSig: "توقيع الموظف المسجل:",
+            clearedAt: "تم إخلاء العهدة بتاريخ: ", transferredTo: "تم النقل إلى: ", at: " بتاريخ: "
         },
         en: { 
-            search: "Search by Employee ID", btnSearch: "Search", btnNew: "New", trans: "Transaction Type", 
-            id: "Employee ID", name: "Employee Name", type: "Asset Type", sn: "Serial (S/N)", 
-            specs: "Specifications", sign: "Employee Signature", clear: "Clear", save: "Save Data", 
+            search: "Search by ID", btnSearch: "Search", btnNew: "New", trans: "Transaction Type", 
+            id: "ID", name: "Name", type: "Type", sn: "S/N", 
+            specs: "Specs", sign: "Signature", clear: "Clear", save: "Save", 
             print: "Print", transfer: "Transfer To:", foundSig: "Registered Signature:",
-            noAsset: "This employee has no active asset or it was transferred.", notFound: "Employee not found."
+            clearedAt: "Asset cleared on: ", transferredTo: "Transferred to: ", at: " on: "
         }
     };
 
@@ -163,13 +162,6 @@
         document.getElementById('btnPrint').innerText = dict.print;
         document.getElementById('lblTransferTo').innerText = dict.transfer;
         document.getElementById('lblFoundSig').innerText = dict.foundSig;
-    }
-
-    function toggleLang() {
-        lang = lang === 'ar' ? 'en' : 'ar';
-        localStorage.setItem('uec_lang', lang);
-        applyLang();
-        resizeCanvas();
     }
 
     function checkTransfer() {
@@ -207,17 +199,20 @@
         .then(res => res.json()).then(res => {
             if(res.data && res.data.length > 0) {
                 const last = res.data[res.data.length - 1];
-                const lastStatus = last[2]; // عمود Transaction Type
+                const date = last[0]; // التاريخ
+                const transType = last[2]; // نوع العملية
+                const dict = translations[lang];
 
-                // تعبئة البيانات
                 document.getElementById('empID').value = last[3];
                 document.getElementById('empName').value = last[4];
                 document.getElementById('sn').value = last[6];
                 document.getElementById('specs').value = last[7];
                 
-                // فحص إذا كانت العهدة لا تزال معه
-                if(lastStatus.toLowerCase().includes("return") || lastStatus.toLowerCase().includes("transfer")) {
-                    alert(translations[lang].noAsset);
+                // تنبيه ذكي بناءً على الحالة
+                if(transType.toLowerCase().includes("transfer")) {
+                    alert(dict.transferredTo + transType.replace("Transfer to ", "") + dict.at + date);
+                } else if(transType.toLowerCase().includes("return")) {
+                    alert(dict.clearedAt + date);
                 }
 
                 if(last[8]) {
@@ -225,13 +220,13 @@
                     document.getElementById('foundSigImg').src = loadedSignature;
                     document.getElementById('searchSignaturePreview').style.display = "block";
                 }
-            } else { alert(translations[lang].notFound); }
+            } else { alert("Not Found"); }
         });
     }
 
     function preparePrint() {
         let sigData = signaturePad.isEmpty() ? loadedSignature : signaturePad.toDataURL();
-        if(!sigData) return alert(lang === 'ar' ? "يرجى التوقيع أولاً" : "Please sign first");
+        if(!sigData) return alert(lang === 'ar' ? "وقع أولاً" : "Sign first");
         document.getElementById('printSignatureImg').src = sigData;
         setTimeout(() => { window.print(); }, 400);
     }
@@ -263,6 +258,7 @@
     };
 
     function handleLogout() { localStorage.clear(); window.location.reload(); }
+    function toggleLang() { lang = lang === 'ar' ? 'en' : 'ar'; localStorage.setItem('uec_lang', lang); applyLang(); resizeCanvas(); }
     function resizeCanvas() {
         const ratio = Math.max(window.devicePixelRatio || 1, 1);
         canvas.width = canvas.offsetWidth * ratio;
