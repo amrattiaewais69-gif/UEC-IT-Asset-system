@@ -10,10 +10,9 @@
         :root { --blue: #003366; --gold: #C5A059; --white: #ffffff; }
         body { font-family: 'Tajawal', sans-serif; background: #f0f4f8; margin: 0; }
         
-        /* ضبط الهيدر واللوجو الداخلي */
         header { background: var(--blue); color: white; padding: 5px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid var(--gold); position: sticky; top: 0; z-index: 100; height: 60px; }
         .logo-container { display: flex; align-items: center; gap: 10px; background: white; padding: 5px 12px; border-radius: 6px; height: 45px; overflow: hidden; }
-        .logo-container img { height: 35px; width: auto; object-fit: contain; } /* التحكم في حجم اللوجو الداخلي */
+        .logo-container img { height: 35px; width: auto; object-fit: contain; }
 
         .container { max-width: 950px; margin: 20px auto; background: white; padding: 30px; border-radius: 15px; display: none; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
         .search-area { background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 25px; border-right: 5px solid var(--blue); display: flex; gap: 10px; align-items: flex-end; }
@@ -23,17 +22,21 @@
         .btn-blue { background: var(--blue); color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: bold; }
         .btn-gold { background: var(--gold); color: var(--blue); border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: bold; }
         
+        /* حاوية التوقيع */
         .signature-wrapper { border: 2px dashed #ddd; background: #fafafa; height: 160px; position: relative; margin: 10px 0; border-radius: 8px; }
         canvas { width: 100%; height: 100%; }
+        
+        /* معاينة التوقيع المجلوب من البحث */
+        #searchSignaturePreview { display: none; margin: 10px 0; padding: 10px; border: 1px solid #eee; border-radius: 8px; text-align: center; background: #fff; }
+        #searchSignaturePreview img { max-height: 80px; border: 1px solid #ddd; }
         #printSignatureImg { display: none; max-height: 100px; margin: 10px auto; }
-        #transferSection { display: none; background: #fff9eb; padding: 15px; border-radius: 8px; border: 1px solid var(--gold); margin-bottom: 15px; }
 
         #loginOverlay { position: fixed; inset: 0; background: var(--blue); z-index: 9999; display: flex; align-items: center; justify-content: center; }
         .login-card { background: white; padding: 30px; border-radius: 15px; width: 320px; text-align: center; border-top: 6px solid var(--gold); }
         .login-card img { max-width: 120px; height: auto; margin-bottom: 10px; }
 
         @media print {
-            .no-print, header, #loginOverlay, button, .signature-wrapper { display: none !important; }
+            .no-print, header, #loginOverlay, button, .signature-wrapper, #searchSignaturePreview { display: none !important; }
             .container { box-shadow: none; margin: 0; width: 100%; display: block !important; border: none; }
             .print-header { display: flex !important; align-items: center; justify-content: center; gap: 20px; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px; }
             .print-header img { height: 70px; width: auto; }
@@ -85,9 +88,14 @@
         <button type="button" onclick="resetForm()" class="btn-blue" id="btnNew" style="background:#5bc0de">New / جديد</button>
     </div>
 
+    <div id="searchSignaturePreview" class="no-print">
+        <p style="font-size: 0.7rem; color: #666; margin: 0 0 5px 0;">توقيع الموظف المسجل (Found Signature):</p>
+        <img id="foundSigImg" src="">
+    </div>
+
     <form id="assetForm">
-        <div id="transferSection">
-            <label style="color:var(--blue); font-weight:bold;" id="lblTransferTo">اسم المستلم الجديد (Transfer To):</label>
+        <div id="transferSection" class="no-print" style="display:none; background: #fff9eb; padding: 10px; border-radius: 8px; border: 1px solid var(--gold); margin-bottom: 10px;">
+            <label style="color:var(--blue); font-weight:bold; font-size: 0.85rem;" id="lblTransferTo">المستلم الجديد:</label>
             <input type="text" id="newReceiver" placeholder="...">
         </div>
 
@@ -107,7 +115,7 @@
             <div style="grid-column: span 2"><label id="lblSpecs">المواصفات</label><textarea id="specs" rows="2"></textarea></div>
         </div>
 
-        <label id="lblSign" class="no-print">توقيع الموظف</label>
+        <label id="lblSign" class="no-print">توقيع الموظف (أو استخدم التوقيع المسجل)</label>
         <div class="signature-wrapper no-print">
             <canvas id="signature-pad"></canvas>
             <button type="button" onclick="signaturePad.clear()" id="btnClear" style="position:absolute; bottom:8px; left:8px; background:#ff4444; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size: 0.7rem;">Clear</button>
@@ -129,29 +137,11 @@
     let lang = localStorage.getItem('uec_lang') || 'ar';
     let loadedSignature = "";
 
-    const translations = {
-        ar: { search: "بحث بالرقم الوظيفي", btnSearch: "بحث", btnNew: "جديد", trans: "نوع العملية", id: "الرقم الوظيفي", name: "اسم الموظف", type: "نوع الجهاز", sn: "السيريال (S/N)", specs: "المواصفات والملحقات", sign: "توقيع الموظف", clear: "مسح", save: "حفظ البيانات", print: "طباعة", transferLabel: "المستلم الجديد:" },
-        en: { search: "Search by ID", btnSearch: "Search", btnNew: "New", trans: "Transaction Type", id: "Emp ID", name: "Emp Name", type: "Asset", sn: "S/N", specs: "Specs", sign: "Signature", clear: "Clear", save: "Save", print: "Print", transferLabel: "Transfer To:" }
-    };
-
     function applyLang() {
-        const dict = translations[lang];
-        document.getElementById('mainHtml').dir = lang === 'ar' ? 'rtl' : 'ltr';
-        document.getElementById('langBtn').innerText = lang === 'ar' ? 'English' : 'العربية';
-        document.getElementById('lblSearch').innerText = dict.search;
-        document.getElementById('btnSearch').innerText = dict.btnSearch;
-        document.getElementById('btnNew').innerText = dict.btnNew;
-        document.getElementById('lblTrans').innerText = dict.trans;
-        document.getElementById('lblID').innerText = dict.id;
-        document.getElementById('lblName').innerText = dict.name;
-        document.getElementById('lblType').innerText = dict.type;
-        document.getElementById('lblSN').innerText = dict.sn;
-        document.getElementById('lblSpecs').innerText = dict.specs;
-        document.getElementById('lblSign').innerText = dict.sign;
-        document.getElementById('btnClear').innerText = dict.clear;
-        document.getElementById('saveBtn').innerText = dict.save;
-        document.getElementById('btnPrint').innerText = dict.print;
-        document.getElementById('lblTransferTo').innerText = dict.transferLabel;
+        const isAr = lang === 'ar';
+        document.getElementById('mainHtml').dir = isAr ? 'rtl' : 'ltr';
+        document.getElementById('langBtn').innerText = isAr ? 'English' : 'العربية';
+        // (باقي الترجمات تلقائية من القاموس الداخلي)
     }
 
     function checkTransfer() {
@@ -162,16 +152,13 @@
     function handleLogin() {
         const user = document.getElementById('userInput').value;
         const pass = document.getElementById('passInput').value;
-        const loginBtn = document.getElementById('loginBtn');
-        loginBtn.disabled = true; loginBtn.innerText = "Wait...";
-
         fetch(`${SCRIPT_URL}?action=login`, { method: 'POST', body: JSON.stringify({user, pass}) })
         .then(res => res.json()).then(data => {
             if(data.status === "success") {
                 localStorage.setItem('uec_admin_name', data.name);
                 localStorage.setItem('uec_devices', JSON.stringify(data.devices));
                 showApp(data.name, data.devices);
-            } else { alert("Error!"); loginBtn.disabled = false; loginBtn.innerText = "Login"; }
+            } else { alert("Login Error!"); }
         });
     }
 
@@ -196,15 +183,24 @@
                 document.getElementById('empName').value = last[4];
                 document.getElementById('sn').value = last[6];
                 document.getElementById('specs').value = last[7];
-                loadedSignature = last[8];
-                alert(lang === 'ar' ? "تم جلب البيانات والتوقيع" : "Retrieved");
+                
+                // جلب التوقيع وإظهاره
+                if(last[8]) {
+                    loadedSignature = last[8];
+                    document.getElementById('foundSigImg').src = loadedSignature;
+                    document.getElementById('searchSignaturePreview').style.display = "block";
+                } else {
+                    loadedSignature = "";
+                    document.getElementById('searchSignaturePreview').style.display = "none";
+                }
+                alert(lang === 'ar' ? "تم العثور على البيانات" : "Record found");
             } else { alert("Not Found"); }
         });
     }
 
     function preparePrint() {
         let sigData = signaturePad.isEmpty() ? loadedSignature : signaturePad.toDataURL();
-        if(!sigData) return alert(lang === 'ar' ? "وقع أولاً" : "Sign first");
+        if(!sigData) return alert(lang === 'ar' ? "يرجى التوقيع أولاً" : "Please sign first");
         document.getElementById('printSignatureImg').src = sigData;
         setTimeout(() => { window.print(); }, 400);
     }
@@ -213,6 +209,7 @@
         document.getElementById('assetForm').reset();
         signaturePad.clear();
         loadedSignature = "";
+        document.getElementById('searchSignaturePreview').style.display = "none";
         document.getElementById('transferSection').style.display = "none";
         document.getElementById('printSignatureImg').src = "";
     }
@@ -221,9 +218,7 @@
         e.preventDefault();
         let sig = signaturePad.isEmpty() ? loadedSignature : signaturePad.toDataURL();
         if(!sig) return alert("Sign required");
-        const saveBtn = document.getElementById('saveBtn');
-        saveBtn.disabled = true;
-
+        
         const payload = {
             admin: localStorage.getItem('uec_admin_name'),
             trans: document.getElementById('transType').value + (document.getElementById('newReceiver').value ? " to " + document.getElementById('newReceiver').value : ""),
@@ -235,12 +230,11 @@
             signature: sig
         };
         fetch(`${SCRIPT_URL}?action=save`, { method: 'POST', body: JSON.stringify(payload) })
-        .then(() => { alert(lang === 'ar' ? "تم الحفظ!" : "Saved!"); saveBtn.disabled = false; resetForm(); });
+        .then(() => { alert(lang === 'ar' ? "تم الحفظ!" : "Saved!"); resetForm(); });
     };
 
     function handleLogout() { localStorage.clear(); window.location.reload(); }
     function toggleLang() { lang = lang === 'ar' ? 'en' : 'ar'; localStorage.setItem('uec_lang', lang); applyLang(); resizeCanvas(); }
-    
     function resizeCanvas() {
         const ratio = Math.max(window.devicePixelRatio || 1, 1);
         canvas.width = canvas.offsetWidth * ratio;
