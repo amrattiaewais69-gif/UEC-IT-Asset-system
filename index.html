@@ -3,53 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UEC Asset Management</title>
+    <title>UEC IT Assets Control</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
     <style>
         :root { --blue: #003366; --gold: #C5A059; --white: #ffffff; --gray: #f4f7f6; }
-        body { font-family: 'Tajawal', sans-serif; background: var(--gray); margin: 0; }
+        body { font-family: 'Tajawal', sans-serif; background: var(--gray); margin: 0; color: #333; }
         
+        /* Login Screen */
         #loginOverlay { position: fixed; inset: 0; background: linear-gradient(135deg, var(--blue) 0%, #001a33 100%); z-index: 9999; display: flex; align-items: center; justify-content: center; }
-        .login-card { background: white; padding: 40px; border-radius: 20px; width: 350px; text-align: center; box-shadow: 0 15px 35px rgba(0,0,0,0.4); border-top: 8px solid var(--gold); }
-        .login-card img { max-width: 140px; margin-bottom: 20px; }
+        .login-card { background: white; padding: 40px; border-radius: 20px; width: 320px; text-align: center; box-shadow: 0 15px 35px rgba(0,0,0,0.3); border-top: 8px solid var(--gold); }
+        .login-card img { max-width: 120px; margin-bottom: 20px; }
         .login-card input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
 
-        header { background: var(--blue); color: white; padding: 5px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid var(--gold); height: 65px; position: sticky; top: 0; z-index: 100; }
-        .logo-container { display: flex; align-items: center; gap: 10px; background: white; padding: 5px 12px; border-radius: 8px; height: 48px; }
-        .logo-container img { height: 38px; }
+        /* Header */
+        header { background: var(--blue); color: white; padding: 0 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid var(--gold); height: 65px; position: sticky; top: 0; z-index: 100; }
+        .logo-container { display: flex; align-items: center; gap: 10px; background: white; padding: 5px 12px; border-radius: 8px; height: 45px; }
+        .logo-container img { height: 35px; }
 
-        .container { max-width: 900px; margin: 20px auto; background: white; padding: 30px; border-radius: 15px; display: none; box-shadow: 0 5px 20px rgba(0,0,0,0.05); }
-        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
-        .tab-btn { padding: 10px 20px; border: none; background: #eee; cursor: pointer; border-radius: 8px; font-weight: bold; }
+        /* App Layout */
+        .container { max-width: 900px; margin: 20px auto; background: white; padding: 25px; border-radius: 15px; display: none; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .tab-btn { padding: 10px 20px; border: none; background: #eee; cursor: pointer; border-radius: 8px; font-weight: bold; font-family: inherit; }
         .tab-btn.active { background: var(--blue); color: white; }
 
-        .search-area { background: #eef2f3; padding: 20px; border-radius: 12px; margin-bottom: 20px; border-right: 6px solid var(--blue); display: flex; gap: 10px; align-items: flex-end; }
+        /* Forms & Inputs */
+        .search-area { background: #eef2f3; padding: 15px; border-radius: 12px; margin-bottom: 20px; border-right: 6px solid var(--blue); display: flex; gap: 10px; align-items: flex-end; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
-        input, select, textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-family: inherit; }
+        input, select, textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-family: inherit; font-size: 0.9rem; }
+        label { font-weight: bold; font-size: 0.85rem; display: block; margin-bottom: 5px; color: var(--blue); }
         
-        .status-banner { grid-column: span 2; background: #fff4e5; border: 1px solid var(--gold); padding: 10px; border-radius: 8px; color: #856404; font-weight: bold; display: none; margin-bottom: 10px; }
-        .btn-blue { background: var(--blue); color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; }
-        .btn-gold { background: var(--gold); color: var(--blue); border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        
-        .dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px; }
-        .stat-card { background: white; padding: 20px; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-bottom: 5px solid var(--blue); }
-        .stat-card p { font-size: 1.8rem; font-weight: bold; margin: 10px 0 0; color: var(--blue); }
+        .status-banner { grid-column: span 2; background: #fff4e5; border: 1px solid var(--gold); padding: 12px; border-radius: 8px; color: #856404; font-weight: bold; display: none; margin-bottom: 15px; }
 
+        /* Buttons */
+        .btn-blue { background: var(--blue); color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .btn-blue:disabled { background: #ccc; }
+        .btn-gold { background: var(--gold); color: var(--blue); border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+
+        /* Dashboard Stats */
+        .dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .stat-card { background: #fff; padding: 20px; border-radius: 12px; text-align: center; border: 1px solid #eee; border-bottom: 5px solid var(--blue); }
+        .stat-card p { font-size: 2rem; font-weight: bold; margin: 5px 0 0; color: var(--blue); }
+        .stat-card h3 { font-size: 0.9rem; color: #666; margin: 0; }
+
+        /* Signature */
         .signature-wrapper { border: 2px dashed #bbb; background: #fdfdfd; height: 160px; position: relative; margin: 10px 0; border-radius: 8px; }
         canvas { width: 100%; height: 100%; }
-        #searchSignaturePreview { display: none; margin: 10px 0; text-align: center; }
-        #searchSignaturePreview img { max-height: 80px; border: 1px solid #ddd; }
-        #printSignatureImg { display: none; max-height: 110px; margin: 10px auto; }
+        #printSignatureImg { display: none; max-height: 100px; margin: 10px auto; }
 
         @media print {
-            .no-print, header, #loginOverlay, .tabs, button, .signature-wrapper, #searchSignaturePreview { display: none !important; }
-            .container { display: block !important; box-shadow: none; margin: 0; width: 100%; }
-            .print-header { display: flex !important; align-items: center; justify-content: center; border-bottom: 2px solid #000; padding-bottom: 20px; margin-bottom: 25px; }
-            .print-header img { height: 80px; }
+            .no-print, header, #loginOverlay, .tabs, button, .signature-wrapper { display: none !important; }
+            .container { display: block !important; box-shadow: none; width: 100%; border: none; }
+            .print-header { display: flex !important; align-items: center; justify-content: center; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px; }
             #printSignatureImg { display: block !important; }
-            .status-banner { display: block !important; background: transparent; border: 1px solid #000; }
-            input, select, textarea { border: none !important; font-weight: bold; background: transparent !important; }
+            input, select, textarea { border: none !important; font-weight: bold; }
         }
         .print-header { display: none; }
     </style>
@@ -58,11 +65,11 @@
 
 <div id="loginOverlay">
     <div class="login-card">
-        <img src="logo.png" alt="Logo">
-        <h2 style="color:var(--blue);">UEC IT ASSETS</h2>
+        <img src="logo.png" alt="UEC Logo" onerror="this.src='https://via.placeholder.com/100?text=UEC'">
+        <h2 style="color:var(--blue); margin-top:0;">IT System</h2>
         <input type="text" id="userInput" placeholder="Username">
         <input type="password" id="passInput" placeholder="Password">
-        <button onclick="handleLogin()" class="btn-blue" id="loginBtn">Login</button>
+        <button onclick="handleLogin()" class="btn-blue" id="loginBtn" style="width:100%">Login</button>
     </div>
 </div>
 
@@ -70,76 +77,75 @@
     <div class="logo-container">
         <img src="logo.png" alt="Logo">
         <div style="border-right: 1px solid #ddd; padding-right: 8px;">
-            <b style="color:var(--blue); font-size: 1.1rem; line-height:1;">UEC</b>
-            <span style="color:var(--gold); font-size:0.6rem; display:block;">UNIVERSITY OF EAST CAPITAL</span>
+            <b style="color:var(--blue); font-size: 1rem; line-height:1;">UEC</b>
+            <span style="color:var(--gold); font-size:0.55rem; display:block; font-weight:bold;">UNIVERSITY OF EAST CAPITAL</span>
         </div>
     </div>
-    <div style="display:flex; gap:10px; align-items:center;">
-        <span id="adminInfo" style="font-size:0.8rem;"></span>
-        <button onclick="toggleLang()" class="btn-gold" id="langBtn" style="padding:5px 15px;">English</button>
-        <button onclick="handleLogout()" class="btn-blue" style="background:#d9534f; width:auto; padding:5px 15px;">Logout</button>
+    <div style="display:flex; gap:8px; align-items:center;">
+        <span id="adminInfo" style="font-size:0.75rem;"></span>
+        <button onclick="toggleLang()" class="btn-gold" id="langBtn" style="padding:4px 12px; font-size:0.7rem;">English</button>
+        <button onclick="handleLogout()" class="btn-blue" style="background:#d9534f; padding:4px 12px; font-size:0.7rem;">Logout</button>
     </div>
 </header>
 
 <div class="container" id="mainApp">
     <div class="tabs no-print">
         <button id="formTab" class="tab-btn active" onclick="switchTab('form')">النماذج | Forms</button>
-        <button id="dashTab" class="tab-btn" onclick="switchTab('dash')" style="display:none;">لوحة التحكم | Dashboard</button>
+        <button id="dashTab" class="tab-btn" onclick="switchTab('dash')" style="display:none;">الإحصائيات | Dashboard</button>
     </div>
 
     <div class="print-header">
-        <img src="logo.png">
-        <div style="text-align:center">
-            <h2 style="margin:0">University of East Capital - IT Department</h2>
-            <p>Asset Handover Form | استمارة عهدة</p>
+        <img src="logo.png" height="60">
+        <div style="text-align:center; margin-right:20px;">
+            <h2 style="margin:0">University of East Capital</h2>
+            <p style="margin:2px 0">IT Asset Handover Form | استمارة تسليم عهدة</p>
         </div>
     </div>
 
     <div id="formSection">
         <div class="search-area no-print">
-            <div style="flex:1"><label id="lblSearch">بحث بالرقم الوظيفي</label><input type="text" id="searchID"></div>
+            <div style="flex:1">
+                <label id="lblSearch">البحث بالرقم الوظيفي</label>
+                <input type="text" id="searchID" placeholder="ID...">
+            </div>
             <button type="button" onclick="searchEmployee()" class="btn-gold" id="btnSearch">Search</button>
-            <button type="button" onclick="resetForm()" class="btn-blue" id="btnNew" style="background:#5bc0de; width:auto;">New</button>
-        </div>
-
-        <div id="searchSignaturePreview" class="no-print">
-            <p id="lblFoundSig" style="font-size:0.7rem;">توقيع مسجل:</p>
-            <img id="foundSigImg" src="">
+            <button type="button" onclick="resetForm()" class="btn-blue" style="background:#5bc0de;">New</button>
         </div>
 
         <form id="assetForm">
             <div id="statusBanner" class="status-banner"></div>
-            <div id="transferSection" class="no-print" style="display:none; background:#fff9eb; padding:15px; border-radius:10px; margin-bottom:15px;">
-                <label id="lblTransferTo">نقل العهدة إلى:</label>
-                <input type="text" id="newReceiver">
+            
+            <div id="transferSection" class="no-print" style="display:none; background:#fff9eb; padding:15px; border-radius:10px; margin-bottom:15px; border: 1px solid var(--gold);">
+                <label id="lblTransferTo">نقل العهدة إلى (المستلم الجديد):</label>
+                <input type="text" id="newReceiver" placeholder="اسم الموظف الجديد...">
             </div>
 
             <div class="grid">
                 <div style="grid-column: span 2">
                     <label id="lblTrans">نوع العملية</label>
                     <select id="transType" onchange="checkTransfer()">
-                        <option value="Issue">Issue</option>
-                        <option value="Return">Return</option>
-                        <option value="Transfer">Transfer</option>
+                        <option value="Issue">صرف عهدة (Issue)</option>
+                        <option value="Return">إرجاع عهدة (Return)</option>
+                        <option value="Transfer">نقل ملكية (Transfer)</option>
                     </select>
                 </div>
-                <div><label id="lblID">ID</label><input type="text" id="empID" required></div>
-                <div><label id="lblName">Name</label><input type="text" id="empName" required></div>
-                <div><label id="lblType">Type</label><select id="assetList"></select></div>
-                <div><label id="lblSN">S/N</label><input type="text" id="sn" required></div>
-                <div style="grid-column: span 2"><label id="lblSpecs">Specs</label><textarea id="specs" rows="2"></textarea></div>
+                <div><label id="lblID">الرقم الوظيفي</label><input type="text" id="empID" required></div>
+                <div><label id="lblName">اسم الموظف</label><input type="text" id="empName" required></div>
+                <div><label id="lblType">نوع الجهاز</label><select id="assetList"></select></div>
+                <div><label id="lblSN">السيريال (S/N)</label><input type="text" id="sn" required></div>
+                <div style="grid-column: span 2"><label id="lblSpecs">المواصفات</label><textarea id="specs" rows="2"></textarea></div>
             </div>
 
-            <label id="lblSign" class="no-print">التوقيع</label>
+            <label id="lblSign" class="no-print">توقيع الموظف</label>
             <div class="signature-wrapper no-print">
                 <canvas id="signature-pad"></canvas>
-                <button type="button" onclick="signaturePad.clear()" style="position:absolute; bottom:10px; left:10px;">Clear</button>
+                <button type="button" onclick="signaturePad.clear()" style="position:absolute; bottom:10px; left:10px; background: #ff4d4d; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">Clear</button>
             </div>
             <img id="printSignatureImg">
             
             <div class="grid no-print" style="margin-top:20px">
-                <button type="submit" id="saveBtn" class="btn-blue">Save</button>
-                <button type="button" onclick="preparePrint()" id="btnPrint" class="btn-gold">Print</button>
+                <button type="submit" id="saveBtn" class="btn-blue">حفظ البيانات</button>
+                <button type="button" onclick="preparePrint()" id="btnPrint" class="btn-gold">طباعة</button>
             </div>
         </form>
     </div>
@@ -148,11 +154,14 @@
         <div class="dash-grid">
             <div class="stat-card"><h3>إجمالي الأجهزة</h3><p id="totalAssets">0</p></div>
             <div class="stat-card"><h3>خارج المخزن</h3><p id="issuedAssets">0</p></div>
-            <div class="stat-card"><h3>في المخزن</h3><p id="stockAssets">0</p></div>
+            <div class="stat-card"><h3>متوفر بالمخزن</h3><p id="stockAssets">0</p></div>
         </div>
-        <div style="background:#fff; padding:20px; border-radius:12px;">
-            <h3 style="color:var(--blue)">آخر العمليات:</h3>
-            <table style="width:100%; text-align:right; font-size:0.8rem; border-collapse:collapse;" border="1" cellpadding="5">
+        <div style="background:#fff; padding:15px; border-radius:12px; border: 1px solid #eee;">
+            <h4 style="margin:0 0 10px; color:var(--blue)">أحدث 5 عمليات:</h4>
+            <table style="width:100%; text-align:right; border-collapse:collapse; font-size:0.8rem;">
+                <thead style="background:#f8f9fa;">
+                    <tr><th style="padding:8px;">التاريخ</th><th>العملية</th><th>الموظف</th><th>الجهاز</th></tr>
+                </thead>
                 <tbody id="recentLogsBody"></tbody>
             </table>
         </div>
@@ -160,15 +169,16 @@
 </div>
 
 <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz-r35RwmB06Ydm2EkXF5P2yMpXu-d4QeeseN5QJ9UpKGNWsqQB3P27OvVT-ZjcYRtC/exec"; // ضع رابط السكربت هنا
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz-r35RwmB06Ydm2EkXF5P2yMpXu-d4QeeseN5QJ9UpKGNWsqQB3P27OvVT-ZjcYRtC/exec"; // ضع هنا رابط الـ Web App URL بعد النشر
+    
     const canvas = document.getElementById('signature-pad');
     const signaturePad = new SignaturePad(canvas);
     let lang = localStorage.getItem('uec_lang') || 'ar';
     let loadedSignature = "";
 
     const translations = {
-        ar: { search: "بحث بالرقم الوظيفي", btnSearch: "بحث", btnNew: "جديد", trans: "نوع العملية", id: "الرقم الوظيفي", name: "اسم الموظف", type: "نوع الجهاز", sn: "السيريال", specs: "المواصفات", sign: "التوقيع", save: "حفظ", print: "طباعة", transfer: "نقل إلى:", cleared: "تم إخلاء العهدة في: ", transferred: "تم النقل إلى " },
-        en: { search: "Search by ID", btnSearch: "Search", btnNew: "New", trans: "Process", id: "ID", name: "Employee Name", type: "Asset Type", sn: "S/N", specs: "Specs", sign: "Signature", save: "Save", print: "Print", transfer: "Transfer To:", cleared: "Cleared on: ", transferred: "Transferred to " }
+        ar: { search: "بحث بالرقم الوظيفي", btnSearch: "بحث", trans: "نوع العملية", id: "الرقم الوظيفي", name: "اسم الموظف", type: "نوع الجهاز", sn: "السيريال", specs: "المواصفات", sign: "التوقيع", save: "حفظ", print: "طباعة", cleared: "تنبيه: تم إخلاء العهدة في: ", transferred: "تنبيه: تم النقل إلى " },
+        en: { search: "Search by ID", btnSearch: "Search", trans: "Process Type", id: "Emp ID", name: "Name", type: "Asset", sn: "S/N", specs: "Specs", sign: "Signature", save: "Save", print: "Print", cleared: "Asset cleared on: ", transferred: "Transferred to " }
     };
 
     function applyLang() {
@@ -177,7 +187,6 @@
         document.getElementById('langBtn').innerText = lang === 'ar' ? 'English' : 'العربية';
         document.getElementById('lblSearch').innerText = d.search;
         document.getElementById('btnSearch').innerText = d.btnSearch;
-        document.getElementById('btnNew').innerText = d.btnNew;
         document.getElementById('lblTrans').innerText = d.trans;
         document.getElementById('lblID').innerText = d.id;
         document.getElementById('lblName').innerText = d.name;
@@ -192,26 +201,34 @@
     function handleLogin() {
         const user = document.getElementById('userInput').value;
         const pass = document.getElementById('passInput').value;
+        const btn = document.getElementById('loginBtn');
+        if(!user || !pass) return alert("Enter credentials");
+        
+        btn.disabled = true; btn.innerText = "Wait...";
+
         fetch(`${SCRIPT_URL}?action=login`, { method: 'POST', body: JSON.stringify({user, pass}) })
         .then(res => res.json()).then(data => {
             if(data.status === "success") {
                 localStorage.setItem('uec_user', data.name);
                 localStorage.setItem('uec_devices', JSON.stringify(data.devices));
                 localStorage.setItem('uec_isSuper', data.isSuper);
-                showApp(data);
-            } else { alert("Login Error!"); }
-        });
+                location.reload(); // ريفريش للتأكد من حالة الدخول
+            } else { alert(data.message || "Login Failed"); btn.disabled = false; btn.innerText = "Login"; }
+        }).catch(e => { alert("Connection Error"); btn.disabled = false; });
     }
 
-    function showApp(data) {
+    function showApp() {
+        const name = localStorage.getItem('uec_user');
+        const devices = JSON.parse(localStorage.getItem('uec_devices'));
+        const isSuper = localStorage.getItem('uec_isSuper') === 'true';
+
         document.getElementById('loginOverlay').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
-        document.getElementById('adminInfo').innerText = "User: " + data.name;
-        if(data.isSuper) document.getElementById('dashTab').style.display = 'block';
+        document.getElementById('adminInfo').innerText = "User: " + name;
+        if(isSuper) document.getElementById('dashTab').style.display = 'block';
         
         const list = document.getElementById('assetList');
-        list.innerHTML = "";
-        data.devices.forEach(d => { let opt = document.createElement('option'); opt.value = d; opt.innerText = d; list.appendChild(opt); });
+        list.innerHTML = devices.map(d => `<option value="${d}">${d}</option>`).join('');
         resizeCanvas();
     }
 
@@ -237,19 +254,23 @@
             document.getElementById('issuedAssets').innerText = s.issued;
             document.getElementById('stockAssets').innerText = s.returned;
             const tbody = document.getElementById('recentLogsBody');
-            tbody.innerHTML = s.recentLogs.map(r => `<tr><td>${r[0].split('T')[0]}</td><td>${r[2]}</td><td>${r[4]}</td><td>${r[5]}</td></tr>`).join('');
+            tbody.innerHTML = s.recentLogs.map(r => `<tr><td style="padding:8px;">${new Date(r[0]).toLocaleDateString()}</td><td>${r[2]}</td><td>${r[4]}</td><td>${r[5]}</td></tr>`).join('');
         });
     }
 
     function searchEmployee() {
         const empID = document.getElementById('searchID').value;
         const banner = document.getElementById('statusBanner');
+        if(!empID) return;
+        
         fetch(`${SCRIPT_URL}?action=search`, { method: 'POST', body: JSON.stringify({empID}) })
         .then(res => res.json()).then(res => {
             if(res.data && res.data.length > 0) {
                 const last = res.data[res.data.length - 1];
                 const type = last[2].toLowerCase();
-                const d = new Date(last[0]).toLocaleString();
+                
+                // تنسيق التاريخ
+                const d = new Date(last[0]).toLocaleString(lang === 'ar' ? 'ar-EG' : 'en-GB', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'});
                 
                 document.getElementById('empID').value = last[3];
                 document.getElementById('empName').value = last[4];
@@ -260,13 +281,14 @@
                 if(type.includes("return")) { banner.innerText = translations[lang].cleared + d; banner.style.display = "block"; }
                 else if(type.includes("transfer")) { banner.innerText = translations[lang].transferred + type.replace("transfer to ","") + " ("+d+")"; banner.style.display = "block"; }
 
-                if(last[8]) { loadedSignature = last[8]; document.getElementById('foundSigImg').src = loadedSignature; document.getElementById('searchSignaturePreview').style.display = "block"; }
-            }
+                if(last[8]) { loadedSignature = last[8]; document.getElementById('printSignatureImg').src = loadedSignature; }
+            } else { alert("Not Found"); }
         });
     }
 
     function preparePrint() {
         let sig = signaturePad.isEmpty() ? loadedSignature : signaturePad.toDataURL();
+        if(!sig) return alert("Sign first!");
         document.getElementById('printSignatureImg').src = sig;
         setTimeout(() => window.print(), 500);
     }
@@ -276,11 +298,14 @@
         signaturePad.clear();
         loadedSignature = "";
         document.getElementById('statusBanner').style.display = 'none';
-        document.getElementById('searchSignaturePreview').style.display = 'none';
+        document.getElementById('transferSection').style.display = 'none';
     }
 
     document.getElementById('assetForm').onsubmit = function(e) {
         e.preventDefault();
+        const btn = document.getElementById('saveBtn');
+        btn.disabled = true; btn.innerText = "...";
+        
         const payload = {
             admin: localStorage.getItem('uec_user'),
             trans: document.getElementById('transType').value + (document.getElementById('newReceiver').value ? " to " + document.getElementById('newReceiver').value : ""),
@@ -292,7 +317,7 @@
             signature: signaturePad.isEmpty() ? loadedSignature : signaturePad.toDataURL()
         };
         fetch(`${SCRIPT_URL}?action=save`, { method: 'POST', body: JSON.stringify(payload) })
-        .then(() => { alert("Saved!"); resetForm(); });
+        .then(() => { alert("Saved!"); resetForm(); btn.disabled = false; btn.innerText = "Save"; });
     };
 
     function checkTransfer() { document.getElementById('transferSection').style.display = document.getElementById('transType').value === 'Transfer' ? 'block' : 'none'; }
@@ -301,9 +326,7 @@
     function resizeCanvas() { const r = Math.max(window.devicePixelRatio || 1, 1); canvas.width = canvas.offsetWidth * r; canvas.height = canvas.offsetHeight * r; canvas.getContext("2d").scale(r, r); }
 
     applyLang();
-    if(localStorage.getItem('uec_user')) {
-        showApp({name: localStorage.getItem('uec_user'), devices: JSON.parse(localStorage.getItem('uec_devices')), isSuper: localStorage.getItem('uec_isSuper') === 'true'});
-    }
+    if(localStorage.getItem('uec_user')) showApp();
 </script>
 </body>
 </html>
