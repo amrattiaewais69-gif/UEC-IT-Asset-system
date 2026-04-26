@@ -9,32 +9,23 @@
     <style>
         :root { --blue: #003366; --gold: #C5A059; --white: #ffffff; }
         body { font-family: 'Tajawal', sans-serif; background: #f0f4f8; margin: 0; }
-        
         header { background: var(--blue); color: white; padding: 5px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid var(--gold); position: sticky; top: 0; z-index: 100; height: 60px; }
         .logo-container { display: flex; align-items: center; gap: 10px; background: white; padding: 5px 12px; border-radius: 6px; height: 45px; overflow: hidden; }
         .logo-container img { height: 35px; width: auto; object-fit: contain; }
-
         .container { max-width: 950px; margin: 20px auto; background: white; padding: 30px; border-radius: 15px; display: none; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
         .search-area { background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 25px; border-right: 5px solid var(--blue); display: flex; gap: 10px; align-items: flex-end; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
         input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
-        
         .btn-blue { background: var(--blue); color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: bold; }
         .btn-gold { background: var(--gold); color: var(--blue); border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        
-        /* حاوية التوقيع */
         .signature-wrapper { border: 2px dashed #ddd; background: #fafafa; height: 160px; position: relative; margin: 10px 0; border-radius: 8px; }
         canvas { width: 100%; height: 100%; }
-        
-        /* معاينة التوقيع المجلوب من البحث */
         #searchSignaturePreview { display: none; margin: 10px 0; padding: 10px; border: 1px solid #eee; border-radius: 8px; text-align: center; background: #fff; }
         #searchSignaturePreview img { max-height: 80px; border: 1px solid #ddd; }
         #printSignatureImg { display: none; max-height: 100px; margin: 10px auto; }
-
         #loginOverlay { position: fixed; inset: 0; background: var(--blue); z-index: 9999; display: flex; align-items: center; justify-content: center; }
         .login-card { background: white; padding: 30px; border-radius: 15px; width: 320px; text-align: center; border-top: 6px solid var(--gold); }
         .login-card img { max-width: 120px; height: auto; margin-bottom: 10px; }
-
         @media print {
             .no-print, header, #loginOverlay, button, .signature-wrapper, #searchSignaturePreview { display: none !important; }
             .container { box-shadow: none; margin: 0; width: 100%; display: block !important; border: none; }
@@ -83,19 +74,19 @@
     </div>
 
     <div class="search-area no-print">
-        <div style="flex:1"><label id="lblSearch" style="font-size:0.8rem; font-weight:bold;">بحث بالرقم الوظيفي</label><input type="text" id="searchID"></div>
+        <div style="flex:1"><label id="lblSearch">بحث بالرقم الوظيفي</label><input type="text" id="searchID"></div>
         <button type="button" onclick="searchEmployee()" class="btn-gold" id="btnSearch">Search</button>
         <button type="button" onclick="resetForm()" class="btn-blue" id="btnNew" style="background:#5bc0de">New / جديد</button>
     </div>
 
     <div id="searchSignaturePreview" class="no-print">
-        <p style="font-size: 0.7rem; color: #666; margin: 0 0 5px 0;">توقيع الموظف المسجل (Found Signature):</p>
+        <p id="lblFoundSig" style="font-size: 0.7rem; color: #666; margin: 0 0 5px 0;">توقيع الموظف المسجل:</p>
         <img id="foundSigImg" src="">
     </div>
 
     <form id="assetForm">
         <div id="transferSection" class="no-print" style="display:none; background: #fff9eb; padding: 10px; border-radius: 8px; border: 1px solid var(--gold); margin-bottom: 10px;">
-            <label style="color:var(--blue); font-weight:bold; font-size: 0.85rem;" id="lblTransferTo">المستلم الجديد:</label>
+            <label id="lblTransferTo">المستلم الجديد:</label>
             <input type="text" id="newReceiver" placeholder="...">
         </div>
 
@@ -103,9 +94,9 @@
             <div style="grid-column: span 2">
                 <label id="lblTrans">نوع العملية</label>
                 <select id="transType" onchange="checkTransfer()">
-                    <option value="Issue">استلام عهدة (Issue)</option>
-                    <option value="Return">إرجاع عهدة (Return)</option>
-                    <option value="Transfer">نقل ملكية (Transfer)</option>
+                    <option value="Issue" id="optIssue">استلام عهدة (Issue)</option>
+                    <option value="Return" id="optReturn">إرجاع عهدة (Return)</option>
+                    <option value="Transfer" id="optTransfer">نقل ملكية (Transfer)</option>
                 </select>
             </div>
             <div><label id="lblID">الرقم الوظيفي</label><input type="text" id="empID" required></div>
@@ -115,12 +106,11 @@
             <div style="grid-column: span 2"><label id="lblSpecs">المواصفات</label><textarea id="specs" rows="2"></textarea></div>
         </div>
 
-        <label id="lblSign" class="no-print">توقيع الموظف (أو استخدم التوقيع المسجل)</label>
+        <label id="lblSign" class="no-print">توقيع الموظف</label>
         <div class="signature-wrapper no-print">
             <canvas id="signature-pad"></canvas>
-            <button type="button" onclick="signaturePad.clear()" id="btnClear" style="position:absolute; bottom:8px; left:8px; background:#ff4444; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size: 0.7rem;">Clear</button>
+            <button type="button" onclick="signaturePad.clear()" id="btnClear">Clear</button>
         </div>
-        
         <img id="printSignatureImg">
         
         <div class="grid no-print" style="margin-top:20px">
@@ -137,11 +127,49 @@
     let lang = localStorage.getItem('uec_lang') || 'ar';
     let loadedSignature = "";
 
+    const translations = {
+        ar: { 
+            search: "بحث بالرقم الوظيفي", btnSearch: "بحث", btnNew: "جديد", trans: "نوع العملية", 
+            id: "الرقم الوظيفي", name: "اسم الموظف", type: "نوع الجهاز", sn: "السيريال (S/N)", 
+            specs: "المواصفات", sign: "توقيع الموظف", clear: "مسح", save: "حفظ (Save)", 
+            print: "طباعة (Print)", transfer: "المستلم الجديد:", foundSig: "توقيع الموظف المسجل:",
+            noAsset: "هذا الموظف ليس لديه عهدة حالية أو تم نقلها.", notFound: "الموظف غير موجود."
+        },
+        en: { 
+            search: "Search by Employee ID", btnSearch: "Search", btnNew: "New", trans: "Transaction Type", 
+            id: "Employee ID", name: "Employee Name", type: "Asset Type", sn: "Serial (S/N)", 
+            specs: "Specifications", sign: "Employee Signature", clear: "Clear", save: "Save Data", 
+            print: "Print", transfer: "Transfer To:", foundSig: "Registered Signature:",
+            noAsset: "This employee has no active asset or it was transferred.", notFound: "Employee not found."
+        }
+    };
+
     function applyLang() {
-        const isAr = lang === 'ar';
-        document.getElementById('mainHtml').dir = isAr ? 'rtl' : 'ltr';
-        document.getElementById('langBtn').innerText = isAr ? 'English' : 'العربية';
-        // (باقي الترجمات تلقائية من القاموس الداخلي)
+        const dict = translations[lang];
+        document.getElementById('mainHtml').dir = lang === 'ar' ? 'rtl' : 'ltr';
+        document.getElementById('langBtn').innerText = lang === 'ar' ? 'English' : 'العربية';
+        document.getElementById('lblSearch').innerText = dict.search;
+        document.getElementById('btnSearch').innerText = dict.btnSearch;
+        document.getElementById('btnNew').innerText = dict.btnNew;
+        document.getElementById('lblTrans').innerText = dict.trans;
+        document.getElementById('lblID').innerText = dict.id;
+        document.getElementById('lblName').innerText = dict.name;
+        document.getElementById('lblType').innerText = dict.type;
+        document.getElementById('lblSN').innerText = dict.sn;
+        document.getElementById('lblSpecs').innerText = dict.specs;
+        document.getElementById('lblSign').innerText = dict.sign;
+        document.getElementById('btnClear').innerText = dict.clear;
+        document.getElementById('saveBtn').innerText = dict.save;
+        document.getElementById('btnPrint').innerText = dict.print;
+        document.getElementById('lblTransferTo').innerText = dict.transfer;
+        document.getElementById('lblFoundSig').innerText = dict.foundSig;
+    }
+
+    function toggleLang() {
+        lang = lang === 'ar' ? 'en' : 'ar';
+        localStorage.setItem('uec_lang', lang);
+        applyLang();
+        resizeCanvas();
     }
 
     function checkTransfer() {
@@ -179,22 +207,25 @@
         .then(res => res.json()).then(res => {
             if(res.data && res.data.length > 0) {
                 const last = res.data[res.data.length - 1];
+                const lastStatus = last[2]; // عمود Transaction Type
+
+                // تعبئة البيانات
                 document.getElementById('empID').value = last[3];
                 document.getElementById('empName').value = last[4];
                 document.getElementById('sn').value = last[6];
                 document.getElementById('specs').value = last[7];
                 
-                // جلب التوقيع وإظهاره
+                // فحص إذا كانت العهدة لا تزال معه
+                if(lastStatus.toLowerCase().includes("return") || lastStatus.toLowerCase().includes("transfer")) {
+                    alert(translations[lang].noAsset);
+                }
+
                 if(last[8]) {
                     loadedSignature = last[8];
                     document.getElementById('foundSigImg').src = loadedSignature;
                     document.getElementById('searchSignaturePreview').style.display = "block";
-                } else {
-                    loadedSignature = "";
-                    document.getElementById('searchSignaturePreview').style.display = "none";
                 }
-                alert(lang === 'ar' ? "تم العثور على البيانات" : "Record found");
-            } else { alert("Not Found"); }
+            } else { alert(translations[lang].notFound); }
         });
     }
 
@@ -217,8 +248,6 @@
     document.getElementById('assetForm').onsubmit = function(e) {
         e.preventDefault();
         let sig = signaturePad.isEmpty() ? loadedSignature : signaturePad.toDataURL();
-        if(!sig) return alert("Sign required");
-        
         const payload = {
             admin: localStorage.getItem('uec_admin_name'),
             trans: document.getElementById('transType').value + (document.getElementById('newReceiver').value ? " to " + document.getElementById('newReceiver').value : ""),
@@ -234,7 +263,6 @@
     };
 
     function handleLogout() { localStorage.clear(); window.location.reload(); }
-    function toggleLang() { lang = lang === 'ar' ? 'en' : 'ar'; localStorage.setItem('uec_lang', lang); applyLang(); resizeCanvas(); }
     function resizeCanvas() {
         const ratio = Math.max(window.devicePixelRatio || 1, 1);
         canvas.width = canvas.offsetWidth * ratio;
