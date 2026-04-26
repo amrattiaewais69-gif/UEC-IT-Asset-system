@@ -7,31 +7,44 @@
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
     <style>
-        :root { --blue: #003366; --gold: #C5A059; --white: #ffffff; }
-        body { font-family: 'Tajawal', sans-serif; background: #f0f4f8; margin: 0; }
-        header { background: var(--blue); color: white; padding: 5px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid var(--gold); position: sticky; top: 0; z-index: 100; height: 60px; }
-        .logo-container { display: flex; align-items: center; gap: 10px; background: white; padding: 5px 12px; border-radius: 6px; height: 45px; overflow: hidden; }
-        .logo-container img { height: 35px; width: auto; object-fit: contain; }
-        .container { max-width: 950px; margin: 20px auto; background: white; padding: 30px; border-radius: 15px; display: none; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
-        .search-area { background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 25px; border-right: 5px solid var(--blue); display: flex; gap: 10px; align-items: flex-end; }
+        :root { --blue: #003366; --gold: #C5A059; --white: #ffffff; --gray: #f4f7f6; }
+        body { font-family: 'Tajawal', sans-serif; background: var(--gray); margin: 0; }
+        
+        /* شاشة اللوجن المحسنة */
+        #loginOverlay { position: fixed; inset: 0; background: linear-gradient(135deg, var(--blue) 0%, #001a33 100%); z-index: 9999; display: flex; align-items: center; justify-content: center; }
+        .login-card { background: white; padding: 40px; border-radius: 20px; width: 350px; text-align: center; box-shadow: 0 15px 35px rgba(0,0,0,0.4); border-top: 8px solid var(--gold); }
+        .login-card img { max-width: 140px; height: auto; margin-bottom: 20px; }
+        .login-card input { margin-bottom: 15px; border: 1px solid #ddd; padding: 12px; }
+
+        header { background: var(--blue); color: white; padding: 5px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid var(--gold); position: sticky; top: 0; z-index: 100; height: 65px; }
+        .logo-container { display: flex; align-items: center; gap: 10px; background: white; padding: 5px 12px; border-radius: 8px; height: 48px; }
+        .logo-container img { height: 38px; width: auto; }
+
+        .container { max-width: 900px; margin: 20px auto; background: white; padding: 30px; border-radius: 15px; display: none; box-shadow: 0 5px 20px rgba(0,0,0,0.05); }
+        .search-area { background: #eef2f3; padding: 20px; border-radius: 12px; margin-bottom: 20px; border-right: 6px solid var(--blue); display: flex; gap: 10px; align-items: flex-end; }
+        
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
-        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
-        .btn-blue { background: var(--blue); color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        .btn-gold { background: var(--gold); color: var(--blue); border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        .signature-wrapper { border: 2px dashed #ddd; background: #fafafa; height: 160px; position: relative; margin: 10px 0; border-radius: 8px; }
-        canvas { width: 100%; height: 100%; }
+        input, select, textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-family: inherit; }
+        
+        .status-banner { grid-column: span 2; background: #fff4e5; border: 1px solid var(--gold); padding: 10px; border-radius: 8px; color: #856404; font-weight: bold; font-size: 0.9rem; display: none; margin-bottom: 10px; }
+
+        .btn-blue { background: var(--blue); color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; }
+        .btn-gold { background: var(--gold); color: var(--blue); border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        
+        .signature-wrapper { border: 2px dashed #bbb; background: #fdfdfd; height: 160px; position: relative; margin: 10px 0; border-radius: 8px; }
+        canvas { width: 100%; height: 100%; cursor: crosshair; }
         #searchSignaturePreview { display: none; margin: 10px 0; padding: 10px; border: 1px solid #eee; border-radius: 8px; text-align: center; background: #fff; }
-        #searchSignaturePreview img { max-height: 80px; border: 1px solid #ddd; }
-        #printSignatureImg { display: none; max-height: 100px; margin: 10px auto; }
-        #loginOverlay { position: fixed; inset: 0; background: var(--blue); z-index: 9999; display: flex; align-items: center; justify-content: center; }
-        .login-card { background: white; padding: 30px; border-radius: 15px; width: 320px; text-align: center; border-top: 6px solid var(--gold); }
+        #searchSignaturePreview img { max-height: 80px; }
+        #printSignatureImg { display: none; max-height: 110px; margin: 10px auto; }
+
         @media print {
             .no-print, header, #loginOverlay, button, .signature-wrapper, #searchSignaturePreview { display: none !important; }
-            .container { box-shadow: none; margin: 0; width: 100%; display: block !important; border: none; }
-            .print-header { display: flex !important; align-items: center; justify-content: center; gap: 20px; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px; }
-            .print-header img { height: 70px; width: auto; }
+            .container { box-shadow: none; margin: 0; width: 100%; display: block !important; }
+            .print-header { display: flex !important; align-items: center; justify-content: center; gap: 20px; border-bottom: 2px solid #000; padding-bottom: 20px; margin-bottom: 25px; }
+            .print-header img { height: 80px; }
             #printSignatureImg { display: block !important; }
-            input, select, textarea { border: none !important; font-weight: bold; padding: 2px !important; }
+            .status-banner { display: block !important; background: transparent; border: 1px solid #000; color: #000; }
+            input, select, textarea { border: none !important; font-weight: bold; padding: 5px !important; background: transparent !important; }
         }
         .print-header { display: none; }
     </style>
@@ -40,26 +53,26 @@
 
 <div id="loginOverlay">
     <div class="login-card">
-        <img src="logo.png" alt="UEC" onerror="this.style.display='none'">
-        <h2 style="color:var(--blue); margin-top:0;">UEC IT LOGIN</h2>
-        <input type="text" id="userInput" placeholder="Username">
-        <input type="password" id="passInput" placeholder="Password" style="margin-top:10px">
-        <button onclick="handleLogin()" class="btn-blue" id="loginBtn" style="margin-top:20px; width:100%">Login</button>
+        <img src="logo.png" alt="UEC Logo" onerror="this.src='https://via.placeholder.com/150?text=UEC+Logo'">
+        <h2 style="color:var(--blue); margin-bottom:25px;">UEC IT ASSETS</h2>
+        <input type="text" id="userInput" placeholder="اسم المستخدم">
+        <input type="password" id="passInput" placeholder="كلمة المرور">
+        <button onclick="handleLogin()" class="btn-blue" id="loginBtn">دخول | Login</button>
     </div>
 </div>
 
 <header>
     <div class="logo-container">
-        <img src="logo.png" alt="UEC Logo" onerror="this.style.display='none'">
-        <div style="border-right: 1px solid #ddd; padding-right: 8px;">
-            <b style="color:var(--blue); display:block; line-height:1; font-size: 1rem;">UEC</b>
-            <span style="color:var(--gold); font-size:0.6rem; font-weight:bold; white-space: nowrap;">UNIVERSITY OF EAST CAPITAL</span>
+        <img src="logo.png" alt="Logo">
+        <div style="border-right: 1px solid #ddd; padding-right: 8px; margin-right: 8px;">
+            <b style="color:var(--blue); display:block; font-size: 1.1rem; line-height: 1;">UEC</b>
+            <span style="color:var(--gold); font-size:0.6rem; font-weight:bold;">UNIVERSITY OF EAST CAPITAL</span>
         </div>
     </div>
-    <div style="display:flex; gap:8px; align-items:center;">
-        <span id="adminInfo" style="font-size:0.75rem;"></span>
-        <button onclick="toggleLang()" class="btn-gold" id="langBtn" style="padding:4px 12px; font-size: 0.8rem;">English</button>
-        <button onclick="handleLogout()" class="btn-blue" style="background:#d9534f; padding:4px 12px; font-size: 0.8rem;">Logout</button>
+    <div style="display:flex; gap:10px; align-items:center;">
+        <span id="adminInfo" style="font-size:0.8rem; background: rgba(255,255,255,0.1); padding: 5px 10px; border-radius: 5px;"></span>
+        <button onclick="toggleLang()" class="btn-gold" id="langBtn" style="padding:5px 15px; font-size:0.8rem;">English</button>
+        <button onclick="handleLogout()" class="btn-blue" style="background:#d9534f; width:auto; padding:5px 15px; font-size:0.8rem;">Logout</button>
     </div>
 </header>
 
@@ -67,31 +80,33 @@
     <div class="print-header">
         <img src="logo.png">
         <div style="text-align:center">
-            <h2 style="margin:0">University of East Capital - IT</h2>
-            <p style="margin:5px 0">Asset Handover Form | استمارة عهدة</p>
+            <h2 style="margin:0">University of East Capital - IT Department</h2>
+            <p style="margin:5px 0">Asset Custody Form | نموذج تسليم عهدة تقنية</p>
         </div>
     </div>
 
     <div class="search-area no-print">
-        <div style="flex:1"><label id="lblSearch">بحث بالرقم الوظيفي</label><input type="text" id="searchID"></div>
+        <div style="flex:1"><label id="lblSearch" style="font-weight:bold; font-size:0.9rem;">بحث بالرقم الوظيفي</label><input type="text" id="searchID" placeholder="0000"></div>
         <button type="button" onclick="searchEmployee()" class="btn-gold" id="btnSearch">Search</button>
-        <button type="button" onclick="resetForm()" class="btn-blue" id="btnNew" style="background:#5bc0de">New / جديد</button>
+        <button type="button" onclick="resetForm()" class="btn-blue" id="btnNew" style="background:#5bc0de; width:auto;">New / جديد</button>
     </div>
 
     <div id="searchSignaturePreview" class="no-print">
-        <p id="lblFoundSig" style="font-size: 0.7rem; color: #666; margin: 0 0 5px 0;">توقيع الموظف المسجل:</p>
+        <p id="lblFoundSig" style="font-size: 0.75rem; color: #555; margin-bottom: 5px;">توقيع الموظف المسجل سابقاً:</p>
         <img id="foundSigImg" src="">
     </div>
 
     <form id="assetForm">
-        <div id="transferSection" class="no-print" style="display:none; background: #fff9eb; padding: 10px; border-radius: 8px; border: 1px solid var(--gold); margin-bottom: 10px;">
-            <label id="lblTransferTo">المستلم الجديد:</label>
-            <input type="text" id="newReceiver" placeholder="...">
+        <div id="statusBanner" class="status-banner"></div>
+
+        <div id="transferSection" class="no-print" style="display:none; background: #fff9eb; padding: 15px; border-radius: 10px; border: 1px solid var(--gold); margin-bottom: 15px;">
+            <label id="lblTransferTo" style="font-weight:bold;">نقل العهدة إلى (Receiver Name):</label>
+            <input type="text" id="newReceiver" placeholder="اسم الموظف المستلم...">
         </div>
 
         <div class="grid">
             <div style="grid-column: span 2">
-                <label id="lblTrans">نوع العملية</label>
+                <label id="lblTrans" style="font-weight:bold;">نوع العملية</label>
                 <select id="transType" onchange="checkTransfer()">
                     <option value="Issue">استلام عهدة (Issue)</option>
                     <option value="Return">إرجاع عهدة (Return)</option>
@@ -102,19 +117,20 @@
             <div><label id="lblName">اسم الموظف</label><input type="text" id="empName" required></div>
             <div><label id="lblType">نوع الجهاز</label><select id="assetList"></select></div>
             <div><label id="lblSN">السيريال (S/N)</label><input type="text" id="sn" required></div>
-            <div style="grid-column: span 2"><label id="lblSpecs">المواصفات</label><textarea id="specs" rows="2"></textarea></div>
+            <div style="grid-column: span 2"><label id="lblSpecs">المواصفات والملحقات</label><textarea id="specs" rows="2"></textarea></div>
         </div>
 
-        <label id="lblSign" class="no-print">توقيع الموظف</label>
+        <label id="lblSign" class="no-print" style="font-weight:bold;">توقيع الموظف الحالي</label>
         <div class="signature-wrapper no-print">
             <canvas id="signature-pad"></canvas>
-            <button type="button" onclick="signaturePad.clear()" id="btnClear" style="position:absolute; bottom:8px; left:8px; background:#ff4444; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size: 0.7rem;">Clear</button>
+            <button type="button" onclick="signaturePad.clear()" id="btnClear" style="position:absolute; bottom:10px; left:10px; background:#ff4444; color:white; border:none; padding:6px 12px; border-radius:5px; cursor:pointer; font-size:0.8rem;">Clear / مسح</button>
         </div>
+        
         <img id="printSignatureImg">
         
-        <div class="grid no-print" style="margin-top:20px">
-            <button type="submit" id="saveBtn" class="btn-blue">حفظ (Save)</button>
-            <button type="button" onclick="preparePrint()" id="btnPrint" class="btn-gold">طباعة (Print)</button>
+        <div class="grid no-print" style="margin-top:25px">
+            <button type="submit" id="saveBtn" class="btn-blue">حفظ البيانات (Save)</button>
+            <button type="button" onclick="preparePrint()" id="btnPrint" class="btn-gold">طباعة النموذج (Print)</button>
         </div>
     </form>
 </div>
@@ -130,16 +146,16 @@
         ar: { 
             search: "بحث بالرقم الوظيفي", btnSearch: "بحث", btnNew: "جديد", trans: "نوع العملية", 
             id: "الرقم الوظيفي", name: "اسم الموظف", type: "نوع الجهاز", sn: "السيريال (S/N)", 
-            specs: "المواصفات", sign: "توقيع الموظف", clear: "مسح", save: "حفظ البيانات", 
-            print: "طباعة", transfer: "المستلم الجديد:", foundSig: "توقيع الموظف المسجل:",
-            clearedAt: "تم إخلاء العهدة بتاريخ: ", transferredTo: "تم النقل إلى: ", at: " بتاريخ: "
+            specs: "المواصفات والملحقات", sign: "توقيع الموظف", clear: "مسح", save: "حفظ البيانات", 
+            print: "طباعة", transfer: "نقل العهدة إلى:", foundSig: "توقيع الموظف المسجل:",
+            cleared: "تنبيه: تم إخلاء هذه العهدة بتاريخ: ", transferred: "تنبيه: تم نقل هذه العهدة إلى "
         },
         en: { 
-            search: "Search by ID", btnSearch: "Search", btnNew: "New", trans: "Transaction Type", 
-            id: "ID", name: "Name", type: "Type", sn: "S/N", 
-            specs: "Specs", sign: "Signature", clear: "Clear", save: "Save", 
-            print: "Print", transfer: "Transfer To:", foundSig: "Registered Signature:",
-            clearedAt: "Asset cleared on: ", transferredTo: "Transferred to: ", at: " on: "
+            search: "Search by Employee ID", btnSearch: "Search", btnNew: "New", trans: "Transaction Type", 
+            id: "Employee ID", name: "Employee Name", type: "Asset Type", sn: "Serial Number", 
+            specs: "Specifications", sign: "Employee Signature", clear: "Clear", save: "Save Data", 
+            print: "Print Form", transfer: "Transfer To:", foundSig: "Previous Signature:",
+            cleared: "Notice: This asset was cleared on: ", transferred: "Notice: Asset transferred to "
         }
     };
 
@@ -172,20 +188,24 @@
     function handleLogin() {
         const user = document.getElementById('userInput').value;
         const pass = document.getElementById('passInput').value;
+        const btn = document.getElementById('loginBtn');
+        if(!user || !pass) return alert("Please enter credentials");
+        btn.disabled = true; btn.innerText = "...";
+        
         fetch(`${SCRIPT_URL}?action=login`, { method: 'POST', body: JSON.stringify({user, pass}) })
         .then(res => res.json()).then(data => {
             if(data.status === "success") {
                 localStorage.setItem('uec_admin_name', data.name);
                 localStorage.setItem('uec_devices', JSON.stringify(data.devices));
                 showApp(data.name, data.devices);
-            } else { alert("Login Error!"); }
+            } else { alert("Login Error!"); btn.disabled = false; btn.innerText = "Login"; }
         });
     }
 
     function showApp(name, devices) {
         document.getElementById('loginOverlay').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
-        document.getElementById('adminInfo').innerText = "Admin: " + name;
+        document.getElementById('adminInfo').innerText = "User: " + name;
         const list = document.getElementById('assetList');
         list.innerHTML = "";
         devices.forEach(d => { let opt = document.createElement('option'); opt.value = d; opt.innerText = d; list.appendChild(opt); });
@@ -194,13 +214,13 @@
 
     function searchEmployee() {
         const empID = document.getElementById('searchID').value;
+        const banner = document.getElementById('statusBanner');
         if(!empID) return;
         fetch(`${SCRIPT_URL}?action=search`, { method: 'POST', body: JSON.stringify({empID}) })
         .then(res => res.json()).then(res => {
             if(res.data && res.data.length > 0) {
                 const last = res.data[res.data.length - 1];
-                const date = last[0]; // التاريخ
-                const transType = last[2]; // نوع العملية
+                const type = last[2].toLowerCase();
                 const dict = translations[lang];
 
                 document.getElementById('empID').value = last[3];
@@ -208,11 +228,13 @@
                 document.getElementById('sn').value = last[6];
                 document.getElementById('specs').value = last[7];
                 
-                // تنبيه ذكي بناءً على الحالة
-                if(transType.toLowerCase().includes("transfer")) {
-                    alert(dict.transferredTo + transType.replace("Transfer to ", "") + dict.at + date);
-                } else if(transType.toLowerCase().includes("return")) {
-                    alert(dict.clearedAt + date);
+                banner.style.display = "none";
+                if(type.includes("return")) {
+                    banner.innerText = dict.cleared + last[0];
+                    banner.style.display = "block";
+                } else if(type.includes("transfer")) {
+                    banner.innerText = dict.transferred + type.replace("transfer to ", "") + " (" + last[0] + ")";
+                    banner.style.display = "block";
                 }
 
                 if(last[8]) {
@@ -220,15 +242,15 @@
                     document.getElementById('foundSigImg').src = loadedSignature;
                     document.getElementById('searchSignaturePreview').style.display = "block";
                 }
-            } else { alert("Not Found"); }
+            } else { alert(lang === 'ar' ? "غير موجود" : "Not Found"); }
         });
     }
 
     function preparePrint() {
         let sigData = signaturePad.isEmpty() ? loadedSignature : signaturePad.toDataURL();
-        if(!sigData) return alert(lang === 'ar' ? "وقع أولاً" : "Sign first");
+        if(!sigData) return alert(lang === 'ar' ? "يرجى التوقيع أولاً" : "Please sign");
         document.getElementById('printSignatureImg').src = sigData;
-        setTimeout(() => { window.print(); }, 400);
+        setTimeout(() => { window.print(); }, 500);
     }
 
     function resetForm() {
@@ -236,6 +258,7 @@
         signaturePad.clear();
         loadedSignature = "";
         document.getElementById('searchSignaturePreview').style.display = "none";
+        document.getElementById('statusBanner').style.display = "none";
         document.getElementById('transferSection').style.display = "none";
         document.getElementById('printSignatureImg').src = "";
     }
@@ -243,6 +266,9 @@
     document.getElementById('assetForm').onsubmit = function(e) {
         e.preventDefault();
         let sig = signaturePad.isEmpty() ? loadedSignature : signaturePad.toDataURL();
+        const saveBtn = document.getElementById('saveBtn');
+        saveBtn.disabled = true;
+
         const payload = {
             admin: localStorage.getItem('uec_admin_name'),
             trans: document.getElementById('transType').value + (document.getElementById('newReceiver').value ? " to " + document.getElementById('newReceiver').value : ""),
@@ -254,7 +280,7 @@
             signature: sig
         };
         fetch(`${SCRIPT_URL}?action=save`, { method: 'POST', body: JSON.stringify(payload) })
-        .then(() => { alert(lang === 'ar' ? "تم الحفظ!" : "Saved!"); resetForm(); });
+        .then(() => { alert("Saved Successfully!"); saveBtn.disabled = false; resetForm(); });
     };
 
     function handleLogout() { localStorage.clear(); window.location.reload(); }
