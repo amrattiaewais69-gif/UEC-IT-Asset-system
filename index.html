@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UEC IT Asset System | University of East Capital</title>
+    <title>UEC IT Asset System</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
     <style>
         :root { --blue: #003366; --gold: #C5A059; --white: #ffffff; }
-        body { font-family: 'Tajawal', sans-serif; background: #f0f4f8; margin: 0; }
+        body { font-family: 'Tajawal', sans-serif; background: #f0f4f8; margin: 0; transition: 0.3s; }
         
         header { background: var(--blue); color: white; padding: 10px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid var(--gold); position: sticky; top: 0; z-index: 100; }
         .logo-container { display: flex; align-items: center; gap: 12px; background: white; padding: 5px 15px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
@@ -27,7 +27,7 @@
         canvas { width: 100%; height: 100%; }
         
         /* صورة التوقيع للطباعة */
-        #printSignatureImg { display: none; max-height: 150px; border: 1px solid #eee; }
+        #printSignatureImg, #prevSignatureImg { display: none; max-height: 120px; border: 1px solid #eee; margin-top: 5px; }
 
         @media print {
             .no-print, header, #loginOverlay, button { display: none !important; }
@@ -38,6 +38,7 @@
             #printSignatureImg { display: block !important; margin: 20px auto; }
             input, select, textarea { border: none !important; background: transparent !important; padding: 5px !important; font-weight: bold; }
         }
+        
         .print-header { display: none; }
         #loginOverlay { position: fixed; inset: 0; background: var(--blue); z-index: 9999; display: flex; align-items: center; justify-content: center; }
         .login-card { background: white; padding: 40px; border-radius: 15px; width: 320px; text-align: center; border-top: 6px solid var(--gold); }
@@ -47,7 +48,7 @@
 
 <div id="loginOverlay">
     <div class="login-card">
-        <img src="logo.png" style="height: 50px; margin-bottom: 20px;" onerror="this.style.display='none'">
+        <img src="logo.png" style="height: 70px; margin-bottom: 30px;" onerror="this.style.display='none'">
         <h2 style="color:var(--blue); margin-top:0;">UEC IT LOGIN</h2>
         <input type="text" id="userInput" placeholder="Username">
         <input type="password" id="passInput" placeholder="Password" style="margin-top:10px">
@@ -65,8 +66,8 @@
     </div>
     <div style="display:flex; gap:10px; align-items:center;">
         <span id="adminInfo" style="font-size:0.8rem;"></span>
-        <button onclick="toggleLang()" class="btn-gold" id="langBtn">English</button>
-        <button onclick="handleLogout()" class="btn-blue" style="background:#d9534f;">Logout</button>
+        <button onclick="toggleLang()" class="btn-gold" id="langBtn" style="padding:5px 15px">English</button>
+        <button onclick="handleLogout()" class="btn-blue" style="background:#d9534f; padding:5px 15px">Logout</button>
     </div>
 </header>
 
@@ -75,18 +76,18 @@
     <div class="print-header">
         <img src="logo.png">
         <div style="text-align:center">
-            <h2 style="margin:0">University of East Capital - IT Department</h2>
+            <h2 style="margin:0">University of East Capital - IT</h2>
             <p style="margin:5px 0">Asset Handover Form | استمارة عهدة فنية</p>
         </div>
     </div>
 
     <div class="search-area no-print">
         <div style="flex:1">
-            <label id="lblSearch" style="font-weight:bold; font-size:0.8rem">بحث بالرقم الوظيفي (Search by ID)</label>
+            <label id="lblSearch" style="font-weight:bold; font-size:0.8rem">بحث بالرقم الوظيفي</label>
             <input type="text" id="searchID" placeholder="...">
         </div>
-        <button type="button" onclick="searchEmployee()" class="btn-gold">Search</button>
-        <button type="button" onclick="resetForm()" class="btn-blue" style="background:#5bc0de">New / جديد</button>
+        <button type="button" onclick="searchEmployee()" class="btn-gold" id="btnSearch">Search</button>
+        <button type="button" onclick="resetForm()" class="btn-blue" id="btnNew" style="background:#5bc0de">New / جديد</button>
     </div>
 
     <form id="assetForm">
@@ -94,9 +95,9 @@
             <div style="grid-column: span 2">
                 <label id="lblTrans">نوع العملية</label>
                 <select id="transType">
-                    <option value="Issue">استلام عهدة (Issue)</option>
-                    <option value="Return">إرجاع عهدة (Return)</option>
-                    <option value="Transfer">نقل ملكية (Transfer)</option>
+                    <option value="Issue" id="optIssue">استلام عهدة (Issue)</option>
+                    <option value="Return" id="optReturn">إرجاع عهدة (Return)</option>
+                    <option value="Transfer" id="optTransfer">نقل ملكية (Transfer)</option>
                 </select>
             </div>
             <div><label id="lblID">الرقم الوظيفي</label><input type="text" id="empID" required></div>
@@ -112,29 +113,69 @@
         <label id="lblSign">توقيع الموظف</label>
         <div class="signature-wrapper no-print">
             <canvas id="signature-pad"></canvas>
-            <button type="button" onclick="signaturePad.clear()" style="position:absolute; bottom:10px; left:10px; background:#ff4444; color:white; border:none; padding:5px; border-radius:4px; cursor:pointer;">Clear</button>
+            <button type="button" onclick="signaturePad.clear()" id="btnClear" style="position:absolute; bottom:10px; left:10px; background:#ff4444; color:white; border:none; padding:5px; border-radius:4px; cursor:pointer; font-size:0.7rem;">Clear</button>
+        </div>
+        
+        <div id="signHistory" class="no-print" style="margin-top:10px; display:none;">
+            <p id="lblPrevSign" style="font-size:0.8rem; color:#666;">التوقيع المسجل سابقاً:</p>
+            <img id="prevSignatureImg" style="display:block;">
         </div>
         
         <img id="printSignatureImg">
         
         <div class="grid no-print" style="margin-top:20px">
             <button type="submit" id="saveBtn" class="btn-blue">حفظ البيانات (Save)</button>
-            <button type="button" onclick="preparePrint()" class="btn-gold">طباعة (Print)</button>
+            <button type="button" onclick="preparePrint()" id="btnPrint" class="btn-gold">طباعة (Print)</button>
         </div>
     </form>
 </div>
 
 <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz-r35RwmB06Ydm2EkXF5P2yMpXu-d4QeeseN5QJ9UpKGNWsqQB3P27OvVT-ZjcYRtC/exec"; // رابط السكريبت الخاص بك
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz-r35RwmB06Ydm2EkXF5P2yMpXu-d4QeeseN5QJ9UpKGNWsqQB3P27OvVT-ZjcYRtC/exec"; 
     const canvas = document.getElementById('signature-pad');
     const signaturePad = new SignaturePad(canvas);
     let lang = localStorage.getItem('uec_lang') || 'ar';
 
+    const translations = {
+        ar: {
+            search: "بحث بالرقم الوظيفي", btnSearch: "بحث", btnNew: "جديد", trans: "نوع العملية",
+            id: "الرقم الوظيفي", name: "اسم الموظف", type: "نوع الجهاز", sn: "السيريال (S/N)",
+            specs: "المواصفات والملحقات", sign: "توقيع الموظف", clear: "مسح", save: "حفظ البيانات",
+            print: "طباعة", prevSign: "التوقيع المسجل سابقاً:", msgSaved: "تم الحفظ!", msgSign: "يرجى التوقيع أولاً"
+        },
+        en: {
+            search: "Search by Employee ID", btnSearch: "Search", btnNew: "New", trans: "Transaction Type",
+            id: "Employee ID", name: "Employee Name", type: "Asset Type", sn: "Serial Number",
+            specs: "Specs & Accessories", sign: "Employee Signature", clear: "Clear", save: "Save Data",
+            print: "Print", prevSign: "Previously Registered Signature:", msgSaved: "Saved Successfully!", msgSign: "Please sign first"
+        }
+    };
+
     function applyLang() {
-        const isAr = lang === 'ar';
-        document.getElementById('mainHtml').dir = isAr ? 'rtl' : 'ltr';
-        document.getElementById('langBtn').innerText = isAr ? 'English' : 'العربية';
-        // ... (باقي الترجمات كما في النسخة السابقة)
+        const dict = translations[lang];
+        document.getElementById('mainHtml').dir = lang === 'ar' ? 'rtl' : 'ltr';
+        document.getElementById('langBtn').innerText = lang === 'ar' ? 'English' : 'العربية';
+        document.getElementById('lblSearch').innerText = dict.search;
+        document.getElementById('btnSearch').innerText = dict.btnSearch;
+        document.getElementById('btnNew').innerText = dict.btnNew;
+        document.getElementById('lblTrans').innerText = dict.trans;
+        document.getElementById('lblID').innerText = dict.id;
+        document.getElementById('lblName').innerText = dict.name;
+        document.getElementById('lblType').innerText = dict.type;
+        document.getElementById('lblSN').innerText = dict.sn;
+        document.getElementById('lblSpecs').innerText = dict.specs;
+        document.getElementById('lblSign').innerText = dict.sign;
+        document.getElementById('btnClear').innerText = dict.clear;
+        document.getElementById('saveBtn').innerText = dict.save;
+        document.getElementById('btnPrint').innerText = dict.print;
+        document.getElementById('lblPrevSign').innerText = dict.prevSign;
+    }
+
+    function toggleLang() {
+        lang = lang === 'ar' ? 'en' : 'ar';
+        localStorage.setItem('uec_lang', lang);
+        applyLang();
+        resizeCanvas();
     }
 
     function handleLogin() {
@@ -151,12 +192,13 @@
                 list.innerHTML = "";
                 data.devices.forEach(d => { let opt = document.createElement('option'); opt.value = d; opt.innerText = d; list.appendChild(opt); });
                 resizeCanvas();
-            } else { alert("Login Error!"); }
+            } else { alert("Login Failed"); }
         });
     }
 
     function searchEmployee() {
         const empID = document.getElementById('searchID').value;
+        if(!empID) return;
         fetch(`${SCRIPT_URL}?action=search`, { method: 'POST', body: JSON.stringify({empID}) })
         .then(res => res.json()).then(res => {
             if(res.data && res.data.length > 0) {
@@ -165,34 +207,32 @@
                 document.getElementById('empName').value = last[4];
                 document.getElementById('sn').value = last[6];
                 document.getElementById('specs').value = last[7];
+                // إظهار التوقيع السابق
+                if(last[8]) {
+                    document.getElementById('prevSignatureImg').src = last[8];
+                    document.getElementById('signHistory').style.display = "block";
+                }
             } else { alert("Not Found"); }
         });
     }
 
-    // دالة الطباعة المحسنة لجلب التوقيع
     function preparePrint() {
-        if(signaturePad.isEmpty()) {
-            alert("يرجى التوقيع أولاً ليظهر في الطباعة");
-            return;
-        }
-        const dataUrl = signaturePad.toDataURL();
-        document.getElementById('printSignatureImg').src = dataUrl;
-        setTimeout(() => { window.print(); }, 200);
+        if(signaturePad.isEmpty()) return alert(translations[lang].msgSign);
+        document.getElementById('printSignatureImg').src = signaturePad.toDataURL();
+        setTimeout(() => { window.print(); }, 300);
     }
 
     function resetForm() {
         document.getElementById('assetForm').reset();
         signaturePad.clear();
+        document.getElementById('signHistory').style.display = "none";
         document.getElementById('printSignatureImg').src = "";
     }
 
     function handleLogout() { sessionStorage.clear(); window.location.reload(); }
-    function toggleLang() { lang = lang === 'ar' ? 'en' : 'ar'; localStorage.setItem('uec_lang', lang); applyLang(); }
 
     document.getElementById('assetForm').onsubmit = function(e) {
         e.preventDefault();
-        const btn = document.getElementById('saveBtn');
-        btn.disabled = true;
         const payload = {
             admin: sessionStorage.getItem('uec_admin'),
             trans: document.getElementById('transType').value,
@@ -204,7 +244,7 @@
             signature: signaturePad.toDataURL()
         };
         fetch(`${SCRIPT_URL}?action=save`, { method: 'POST', body: JSON.stringify(payload) })
-        .then(() => { alert("Saved!"); btn.disabled = false; resetForm(); });
+        .then(() => { alert(translations[lang].msgSaved); resetForm(); });
     };
 
     function resizeCanvas() {
