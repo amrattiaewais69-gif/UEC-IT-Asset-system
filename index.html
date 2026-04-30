@@ -33,7 +33,7 @@
             .container { display: block !important; box-shadow: none; width: 100%; border: none; }
             .print-header { display: flex !important; align-items: center; justify-content: center; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px; }
             #printSignatureImg { display: block !important; }
-            input, select, textarea { border: none !important; font-weight: bold; }
+            input, select, textarea { border: none !important; font-weight: bold; background: transparent !important; }
         }
         .print-header { display: none; }
     </style>
@@ -43,7 +43,7 @@
 <div id="loginOverlay">
     <div class="login-card">
         <img src="logo.png" alt="UEC Logo" onerror="this.src='https://via.placeholder.com/100?text=UEC'">
-        <h2 style="color:var(--blue); margin-top:0;">IT ASSETS</h2>
+        <h2 style="color:var(--blue); margin-top:0;">IT ASSETS2</h2>
         <input type="text" id="userInput" placeholder="Username">
         <input type="password" id="passInput" placeholder="Password">
         <button onclick="handleLogin()" class="btn-blue" id="loginBtn" style="width:100%">Login</button>
@@ -88,6 +88,7 @@
 
         <form id="assetForm">
             <div id="statusBanner" style="display:none; background:#fff4e5; border:1px solid var(--gold); padding:10px; margin-bottom:10px; border-radius:8px;"></div>
+            
             <div id="transferSection" class="no-print" style="display:none; background:#fff9eb; padding:15px; border-radius:10px; margin-bottom:15px; border: 1px solid var(--gold);">
                 <label id="lblTransferTo">نقل العهدة إلى:</label>
                 <input type="text" id="newReceiver" placeholder="اسم الموظف الجديد...">
@@ -129,18 +130,45 @@
              <div style="background:#eee; padding:15px; border-radius:10px;"><h3>Issued</h3><p id="issuedAssets">0</p></div>
              <div style="background:#eee; padding:15px; border-radius:10px;"><h3>Stock</h3><p id="stockAssets">0</p></div>
         </div>
-        <table style="width:100%; margin-top:20px; border-collapse:collapse;">
-            <tbody id="recentLogsBody"></tbody>
-        </table>
     </div>
 </div>
 
 <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz-r35RwmB06Ydm2EkXF5P2yMpXu-d4QeeseN5QJ9UpKGNWsqQB3P27OvVT-ZjcYRtC/exec"; // ضع رابط السكربت هنا
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz-r35RwmB06Ydm2EkXF5P2yMpXu-d4QeeseN5QJ9UpKGNWsqQB3P27OvVT-ZjcYRtC/exec"; // استبدل بـ URL الخاص بك
     const canvas = document.getElementById('signature-pad');
     const signaturePad = new SignaturePad(canvas);
     let lang = localStorage.getItem('uec_lang') || 'ar';
     let loadedSignature = "";
+
+    // قاموس الترجمة لإصلاح زر اللغة
+    const translations = {
+        ar: { search: "البحث بالرقم الوظيفي", btnSearch: "بحث", trans: "نوع العملية", id: "الرقم الوظيفي", name: "اسم الموظف", type: "نوع الجهاز", sn: "السيريال", specs: "المواصفات", sign: "التوقيع", save: "حفظ البيانات", print: "طباعة", langBtn: "English" },
+        en: { search: "Search by ID", btnSearch: "Search", trans: "Process Type", id: "Emp ID", name: "Emp Name", type: "Asset Type", sn: "S/N Number", specs: "Specifications", sign: "Signature", save: "Save Data", print: "Print", langBtn: "العربية" }
+    };
+
+    function applyLang() {
+        const d = translations[lang];
+        document.getElementById('mainHtml').dir = lang === 'ar' ? 'rtl' : 'ltr';
+        document.getElementById('langBtn').innerText = d.langBtn;
+        document.getElementById('lblSearch').innerText = d.search;
+        document.getElementById('btnSearch').innerText = d.btnSearch;
+        document.getElementById('lblTrans').innerText = d.trans;
+        document.getElementById('lblID').innerText = d.id;
+        document.getElementById('lblName').innerText = d.name;
+        document.getElementById('lblType').innerText = d.type;
+        document.getElementById('lblSN').innerText = d.sn;
+        document.getElementById('lblSpecs').innerText = d.specs;
+        document.getElementById('lblSign').innerText = d.sign;
+        document.getElementById('saveBtn').innerText = d.save;
+        document.getElementById('btnPrint').innerText = d.print;
+    }
+
+    function toggleLang() {
+        lang = lang === 'ar' ? 'en' : 'ar';
+        localStorage.setItem('uec_lang', lang);
+        applyLang();
+        resizeCanvas();
+    }
 
     function handleLogin() {
         const user = document.getElementById('userInput').value;
@@ -167,7 +195,45 @@
         if(localStorage.getItem('uec_isSuper') === 'true') document.getElementById('dashTab').style.display = 'block';
         const devices = JSON.parse(localStorage.getItem('uec_devices') || '[]');
         document.getElementById('assetList').innerHTML = devices.map(d => `<option value="${d}">${d}</option>`).join('');
+        applyLang();
         resizeCanvas();
+    }
+
+    // إصلاح زر نيو
+    function resetForm() {
+        document.getElementById('assetForm').reset();
+        document.getElementById('searchID').value = "";
+        signaturePad.clear();
+        loadedSignature = "";
+        document.getElementById('printSignatureImg').style.display = "none";
+        document.getElementById('statusBanner').style.display = 'none';
+    }
+
+    // إصلاح زر البحث
+    function searchEmployee() {
+        const empID = document.getElementById('searchID').value;
+        if(!empID) return alert("الرجاء إدخال الرقم الوظيفي أولاً");
+        const btn = document.getElementById('btnSearch');
+        btn.innerText = "...";
+
+        fetch(`${SCRIPT_URL}?action=search`, { method: 'POST', body: JSON.stringify({empID}) })
+        .then(res => res.json()).then(res => {
+            btn.innerText = translations[lang].btnSearch;
+            if(res.data && res.data.length > 0) {
+                const last = res.data[res.data.length - 1];
+                document.getElementById('empID').value = last[3];
+                document.getElementById('empName').value = last[4];
+                document.getElementById('assetList').value = last[5];
+                document.getElementById('sn').value = last[6];
+                document.getElementById('specs').value = last[7];
+                if(last[8]) { 
+                    loadedSignature = last[8]; 
+                    document.getElementById('printSignatureImg').src = loadedSignature;
+                }
+            } else {
+                alert("لا توجد بيانات لهذا الموظف");
+            }
+        }).catch(err => alert("خطأ في الاتصال بالسيرفر"));
     }
 
     document.getElementById('assetForm').onsubmit = function(e) {
@@ -188,52 +254,41 @@
 
         fetch(`${SCRIPT_URL}?action=save`, { method: 'POST', body: JSON.stringify(payload) })
         .then(res => res.text()).then(t => { 
-            if(t.includes("Success")) { alert("تم الحفظ في شيت Data بنجاح!"); resetForm(); }
-            btn.disabled = false; btn.innerText = "حفظ البيانات";
+            if(t.includes("Success")) { alert("تم الحفظ بنجاح!"); resetForm(); }
+            else { alert("خطأ أثناء الحفظ: " + t); }
+            btn.disabled = false; btn.innerText = translations[lang].save;
         });
     };
-
-    function searchEmployee() {
-        const empID = document.getElementById('searchID').value;
-        fetch(`${SCRIPT_URL}?action=search`, { method: 'POST', body: JSON.stringify({empID}) })
-        .then(res => res.json()).then(res => {
-            if(res.data && res.data.length > 0) {
-                const last = res.data[res.data.length - 1];
-                document.getElementById('empID').value = last[3];
-                document.getElementById('empName').value = last[4];
-                document.getElementById('sn').value = last[6];
-                document.getElementById('specs').value = last[7];
-                if(last[8]) { loadedSignature = last[8]; document.getElementById('printSignatureImg').src = loadedSignature; }
-            }
-        });
-    }
 
     function switchTab(t) {
         document.getElementById('formSection').style.display = t === 'form' ? 'block' : 'none';
         document.getElementById('dashSection').style.display = t === 'dash' ? 'block' : 'none';
-        if(t === 'dash') loadDashboard();
+        document.getElementById('formTab').className = t === 'form' ? 'tab-btn active' : 'tab-btn';
+        document.getElementById('dashTab').className = t === 'dash' ? 'tab-btn active' : 'tab-btn';
     }
 
-    function loadDashboard() {
-        fetch(`${SCRIPT_URL}?action=getDashboard`, { method: 'POST', body: JSON.stringify({user: localStorage.getItem('uec_user')}) })
-        .then(res => res.json()).then(s => {
-            document.getElementById('totalAssets').innerText = s.total;
-            document.getElementById('issuedAssets').innerText = s.issued;
-            document.getElementById('stockAssets').innerText = s.returned;
-        });
+    function checkTransfer() { 
+        document.getElementById('transferSection').style.display = document.getElementById('transType').value === 'Transfer' ? 'block' : 'none'; 
     }
 
     function preparePrint() {
-        document.getElementById('printSignatureImg').src = signaturePad.isEmpty() ? loadedSignature : signaturePad.toDataURL();
+        const sig = signaturePad.isEmpty() ? loadedSignature : signaturePad.toDataURL();
+        if(!sig) return alert("الرجاء التوقيع أولاً");
+        document.getElementById('printSignatureImg').src = sig;
+        document.getElementById('printSignatureImg').style.display = "block";
         setTimeout(() => window.print(), 500);
     }
 
-    function resetForm() { document.getElementById('assetForm').reset(); signaturePad.clear(); loadedSignature = ""; }
-    function checkTransfer() { document.getElementById('transferSection').style.display = document.getElementById('transType').value === 'Transfer' ? 'block' : 'none'; }
-    function toggleLang() { lang = lang === 'ar' ? 'en' : 'ar'; applyLang(); }
     function handleLogout() { localStorage.clear(); window.location.reload(); }
-    function resizeCanvas() { const r = Math.max(window.devicePixelRatio || 1, 1); canvas.width = canvas.offsetWidth * r; canvas.height = canvas.offsetHeight * r; canvas.getContext("2d").scale(r, r); }
-    
+    function resizeCanvas() {
+        const ratio = Math.max(window.devicePixelRatio || 1, 1);
+        canvas.width = canvas.offsetWidth * ratio;
+        canvas.height = canvas.offsetHeight * ratio;
+        canvas.getContext("2d").scale(ratio, ratio);
+        signaturePad.clear();
+    }
+
+    window.onresize = resizeCanvas;
     if(localStorage.getItem('uec_user')) showApp();
 </script>
 </body>
