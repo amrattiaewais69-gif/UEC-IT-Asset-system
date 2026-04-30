@@ -28,8 +28,16 @@
         .signature-wrapper { border: 2px dashed #bbb; background: #fdfdfd; height: 160px; position: relative; margin: 10px 0; border-radius: 8px; }
         canvas { width: 100%; height: 100%; }
         #printSignatureImg { display: none; max-height: 100px; margin: 10px auto; }
+        
+        /* تصميم جدول العهدة الجديد */
+        #employeeAssetsWrapper { display:none; margin: 20px 0; padding: 15px; border: 1px solid #eee; border-radius: 10px; background: #fff; }
+        .asset-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85rem; }
+        .asset-table th { background: var(--blue); color: white; padding: 10px; text-align: center; }
+        .asset-table td { padding: 10px; border-bottom: 1px solid #eee; text-align: center; }
+        .btn-select { background: var(--gold); border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 0.7rem; }
+
         @media print {
-            .no-print, header, #loginOverlay, .tabs, button, .signature-wrapper { display: none !important; }
+            .no-print, header, #loginOverlay, .tabs, button, .signature-wrapper, #employeeAssetsWrapper { display: none !important; }
             .container { display: block !important; box-shadow: none; width: 100%; border: none; }
             .print-header { display: flex !important; align-items: center; justify-content: center; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px; }
             #printSignatureImg { display: block !important; }
@@ -43,7 +51,7 @@
 <div id="loginOverlay">
     <div class="login-card">
         <img src="logo.png" alt="UEC Logo" onerror="this.src='https://via.placeholder.com/100?text=UEC'">
-        <h2 style="color:var(--blue); margin-top:0;">IT ASSETS2</h2>
+        <h2 style="color:var(--blue); margin-top:0;">IT ASSETS</h2>
         <input type="text" id="userInput" placeholder="Username">
         <input type="password" id="passInput" placeholder="Password">
         <button onclick="handleLogin()" class="btn-blue" id="loginBtn" style="width:100%">Login</button>
@@ -87,8 +95,6 @@
         </div>
 
         <form id="assetForm">
-            <div id="statusBanner" style="display:none; background:#fff4e5; border:1px solid var(--gold); padding:10px; margin-bottom:10px; border-radius:8px;"></div>
-            
             <div id="transferSection" class="no-print" style="display:none; background:#fff9eb; padding:15px; border-radius:10px; margin-bottom:15px; border: 1px solid var(--gold);">
                 <label id="lblTransferTo">نقل العهدة إلى:</label>
                 <input type="text" id="newReceiver" placeholder="اسم الموظف الجديد...">
@@ -110,6 +116,22 @@
                 <div style="grid-column: span 2"><label id="lblSpecs">المواصفات</label><textarea id="specs" rows="2"></textarea></div>
             </div>
 
+            <!-- جدول العهدة المتعددة المدمج -->
+            <div id="employeeAssetsWrapper" class="no-print">
+                <h4 id="lblAssetsTitle" style="color: var(--blue); margin: 0 0 10px 0; border-bottom: 2px solid var(--gold);">العهدة الحالية | Assets</h4>
+                <table class="asset-table">
+                    <thead>
+                        <tr>
+                            <th>التاريخ</th>
+                            <th>الجهاز</th>
+                            <th>S/N</th>
+                            <th>الإجراء</th>
+                        </tr>
+                    </thead>
+                    <tbody id="employeeAssetsBody"></tbody>
+                </table>
+            </div>
+
             <label id="lblSign" class="no-print">التوقيع</label>
             <div class="signature-wrapper no-print">
                 <canvas id="signature-pad"></canvas>
@@ -126,24 +148,23 @@
 
     <div id="dashSection" style="display:none;">
         <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; text-align:center;">
-             <div style="background:#eee; padding:15px; border-radius:10px;"><h3>Total</h3><p id="totalAssets">0</p></div>
-             <div style="background:#eee; padding:15px; border-radius:10px;"><h3>Issued</h3><p id="issuedAssets">0</p></div>
-             <div style="background:#eee; padding:15px; border-radius:10px;"><h3>Stock</h3><p id="stockAssets">0</p></div>
+             <div style="background:#fff; padding:15px; border-radius:10px; border-bottom:5px solid var(--blue);"><h3>Total</h3><p id="totalAssets" style="font-size:2rem; font-weight:bold; color:var(--blue);">0</p></div>
+             <div style="background:#fff; padding:15px; border-radius:10px; border-bottom:5px solid green;"><h3>Issued</h3><p id="issuedAssets" style="font-size:2rem; font-weight:bold; color:green;">0</p></div>
+             <div style="background:#fff; padding:15px; border-radius:10px; border-bottom:5px solid var(--gold);"><h3>In Stock</h3><p id="stockAssets" style="font-size:2rem; font-weight:bold; color:var(--gold);">0</p></div>
         </div>
     </div>
 </div>
 
 <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz-r35RwmB06Ydm2EkXF5P2yMpXu-d4QeeseN5QJ9UpKGNWsqQB3P27OvVT-ZjcYRtC/exec"; // استبدل بـ URL الخاص بك
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz-r35RwmB06Ydm2EkXF5P2yMpXu-d4QeeseN5QJ9UpKGNWsqQB3P27OvVT-ZjcYRtC/exec"; // استبدل بالرابط الخاص بك
     const canvas = document.getElementById('signature-pad');
     const signaturePad = new SignaturePad(canvas);
     let lang = localStorage.getItem('uec_lang') || 'ar';
     let loadedSignature = "";
 
-    // قاموس الترجمة لإصلاح زر اللغة
     const translations = {
-        ar: { search: "البحث بالرقم الوظيفي", btnSearch: "بحث", trans: "نوع العملية", id: "الرقم الوظيفي", name: "اسم الموظف", type: "نوع الجهاز", sn: "السيريال", specs: "المواصفات", sign: "التوقيع", save: "حفظ البيانات", print: "طباعة", langBtn: "English" },
-        en: { search: "Search by ID", btnSearch: "Search", trans: "Process Type", id: "Emp ID", name: "Emp Name", type: "Asset Type", sn: "S/N Number", specs: "Specifications", sign: "Signature", save: "Save Data", print: "Print", langBtn: "العربية" }
+        ar: { search: "البحث بالرقم الوظيفي", btnSearch: "بحث", trans: "نوع العملية", id: "الرقم الوظيفي", name: "اسم الموظف", type: "نوع الجهاز", sn: "السيريال", specs: "المواصفات", sign: "التوقيع", save: "حفظ البيانات", print: "طباعة", langBtn: "English", assetsTitle: "العهدة الحالية المسجلة" },
+        en: { search: "Search by ID", btnSearch: "Search", trans: "Process Type", id: "Emp ID", name: "Emp Name", type: "Asset Type", sn: "S/N Number", specs: "Specifications", sign: "Signature", save: "Save Data", print: "Print", langBtn: "العربية", assetsTitle: "Currently Registered Assets" }
     };
 
     function applyLang() {
@@ -161,6 +182,7 @@
         document.getElementById('lblSign').innerText = d.sign;
         document.getElementById('saveBtn').innerText = d.save;
         document.getElementById('btnPrint').innerText = d.print;
+        document.getElementById('lblAssetsTitle').innerText = d.assetsTitle;
     }
 
     function toggleLang() {
@@ -199,41 +221,57 @@
         resizeCanvas();
     }
 
-    // إصلاح زر نيو
-    function resetForm() {
-        document.getElementById('assetForm').reset();
-        document.getElementById('searchID').value = "";
-        signaturePad.clear();
-        loadedSignature = "";
-        document.getElementById('printSignatureImg').style.display = "none";
-        document.getElementById('statusBanner').style.display = 'none';
-    }
-
-    // إصلاح زر البحث
     function searchEmployee() {
         const empID = document.getElementById('searchID').value;
-        if(!empID) return alert("الرجاء إدخال الرقم الوظيفي أولاً");
+        if(!empID) return alert("ادخل الرقم الوظيفي");
         const btn = document.getElementById('btnSearch');
         btn.innerText = "...";
 
         fetch(`${SCRIPT_URL}?action=search`, { method: 'POST', body: JSON.stringify({empID}) })
         .then(res => res.json()).then(res => {
             btn.innerText = translations[lang].btnSearch;
+            const wrapper = document.getElementById('employeeAssetsWrapper');
+            const tbody = document.getElementById('employeeAssetsBody');
+            tbody.innerHTML = "";
+
             if(res.data && res.data.length > 0) {
+                wrapper.style.display = "block";
                 const last = res.data[res.data.length - 1];
                 document.getElementById('empID').value = last[3];
                 document.getElementById('empName').value = last[4];
-                document.getElementById('assetList').value = last[5];
-                document.getElementById('sn').value = last[6];
-                document.getElementById('specs').value = last[7];
-                if(last[8]) { 
-                    loadedSignature = last[8]; 
-                    document.getElementById('printSignatureImg').src = loadedSignature;
-                }
+                if(last[8]) { loadedSignature = last[8]; document.getElementById('printSignatureImg').src = loadedSignature; }
+
+                res.data.reverse().forEach(row => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${new Date(row[0]).toLocaleDateString()}</td>
+                        <td>${row[5]}</td>
+                        <td>${row[6]}</td>
+                        <td><button type="button" class="btn-select" onclick="selectAsset('${row[5]}', '${row[6]}', '${row[7].replace(/\n/g, ' ')}')">اختيار</button></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
             } else {
                 alert("لا توجد بيانات لهذا الموظف");
+                wrapper.style.display = "none";
             }
-        }).catch(err => alert("خطأ في الاتصال بالسيرفر"));
+        });
+    }
+
+    function selectAsset(type, sn, specs) {
+        document.getElementById('assetList').value = type;
+        document.getElementById('sn').value = sn;
+        document.getElementById('specs').value = specs;
+        document.getElementById('transType').focus();
+    }
+
+    function resetForm() {
+        document.getElementById('assetForm').reset();
+        document.getElementById('searchID').value = "";
+        document.getElementById('employeeAssetsWrapper').style.display = "none";
+        signaturePad.clear();
+        loadedSignature = "";
+        document.getElementById('printSignatureImg').style.display = "none";
     }
 
     document.getElementById('assetForm').onsubmit = function(e) {
@@ -255,7 +293,6 @@
         fetch(`${SCRIPT_URL}?action=save`, { method: 'POST', body: JSON.stringify(payload) })
         .then(res => res.text()).then(t => { 
             if(t.includes("Success")) { alert("تم الحفظ بنجاح!"); resetForm(); }
-            else { alert("خطأ أثناء الحفظ: " + t); }
             btn.disabled = false; btn.innerText = translations[lang].save;
         });
     };
@@ -265,10 +302,16 @@
         document.getElementById('dashSection').style.display = t === 'dash' ? 'block' : 'none';
         document.getElementById('formTab').className = t === 'form' ? 'tab-btn active' : 'tab-btn';
         document.getElementById('dashTab').className = t === 'dash' ? 'tab-btn active' : 'tab-btn';
+        if(t === 'dash') loadDashboard();
     }
 
-    function checkTransfer() { 
-        document.getElementById('transferSection').style.display = document.getElementById('transType').value === 'Transfer' ? 'block' : 'none'; 
+    function loadDashboard() {
+        fetch(`${SCRIPT_URL}?action=getDashboard`, { method: 'POST', body: JSON.stringify({user: localStorage.getItem('uec_user')}) })
+        .then(res => res.json()).then(s => {
+            document.getElementById('totalAssets').innerText = s.total;
+            document.getElementById('issuedAssets').innerText = s.issued;
+            document.getElementById('stockAssets').innerText = s.returned;
+        });
     }
 
     function preparePrint() {
@@ -279,6 +322,7 @@
         setTimeout(() => window.print(), 500);
     }
 
+    function checkTransfer() { document.getElementById('transferSection').style.display = document.getElementById('transType').value === 'Transfer' ? 'block' : 'none'; }
     function handleLogout() { localStorage.clear(); window.location.reload(); }
     function resizeCanvas() {
         const ratio = Math.max(window.devicePixelRatio || 1, 1);
