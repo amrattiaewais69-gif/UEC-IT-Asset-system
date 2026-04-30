@@ -53,6 +53,7 @@
 <div id="loginOverlay">
     <div class="login-card">
         <img src="logo.png" alt="UEC Logo" onerror="this.src='https://via.placeholder.com/100?text=UEC'">
+        <h2 style="color:var(--blue); margin-top:0;">UEC ASSETS</h2>
         <input type="text" id="userInput" placeholder="Username">
         <input type="password" id="passInput" placeholder="Password">
         <button onclick="handleLogin()" class="btn-blue" id="loginBtn">Login</button>
@@ -294,25 +295,39 @@
     }
 
     function preparePrint() {
-        const type = document.getElementById('transType').value;
-        const headerTitle = document.querySelector('.print-header p');
-        const legalText = document.getElementById('legalText');
-        
-        if (type === 'Return') {
-            headerTitle.innerText = "IT Asset Clearance | إخلاء طرف عهدة";
-            legalText.innerText = "يقر قسم IT بجامعة UEC باستلام الجهاز المذكور أعلاه من الموظف، وبذلك يعتبر إخلاء طرف له بخصوص هذه العهدة.";
-        } else if (type === 'Transfer') {
-            headerTitle.innerText = "Asset Transfer Form | نموذج نقل عهدة";
-            legalText.innerText = "يقر الطرفان بنقل ملكية العهدة أعلاه، ويتحمل الطرف الثاني كامل المسؤولية من تاريخ التوقيع.";
-        } else {
-            headerTitle.innerText = "IT Asset Handover | استمارة استلام عهدة";
-            legalText.innerText = "أقر أنا الموظف المذكور أعلاه باستلامي العهدة الموضحة، وأتعهد بالحفاظ عليها وإعادتها فور الطلب.";
-        }
-
-        document.getElementById('printSignatureImg').src = signaturePad.isEmpty() ? loadedSignature : signaturePad.toDataURL();
-        document.getElementById('printSignatureImg').style.display = "block";
-        setTimeout(() => { window.print(); headerTitle.innerText = "IT Asset Handover | استمارة عهدة"; }, 500);
+    const type = document.getElementById('transType').value;
+    const headerTitle = document.querySelector('.print-header p');
+    const legalText = document.getElementById('legalText');
+    
+    // سحب الأسماء من الخانات
+    const currentEmp = document.getElementById('empName').value || "................";
+    const newEmp = document.getElementById('newEmpName').value || "................";
+    
+    // تخصيص العنوان والنص القانوني بناءً على نوع العملية
+    if (type === 'Return') {
+        headerTitle.innerText = "IT Asset Clearance | إخلاء طرف عهدة";
+        legalText.innerText = `يقر قسم IT بجامعة UEC باستلام الجهاز المذكور أعلاه من الموظف/ ${currentEmp}، وبذلك يعتبر إخلاء طرف له بخصوص هذه العهدة.`;
+    } 
+    else if (type === 'Transfer') {
+        headerTitle.innerText = "Asset Transfer Form | نموذج نقل عهدة";
+        // هنا يتم دمج اسم المسلم والمستلم في الإقرار
+        legalText.innerHTML = `يقر الطرف الأول (المسلم): <b>${currentEmp}</b> بأنه نقل ملكية العهدة أعلاه، <br> 
+                               ويقر الطرف الثاني (المستلم): <b>${newEmp}</b> باستلامها وتحمل كامل المسؤولية عنها من تاريخه.`;
+    } 
+    else {
+        headerTitle.innerText = "IT Asset Handover | استمارة استلام عهدة";
+        legalText.innerText = `أقر أنا الموظف/ ${currentEmp} المذكور أعلاه باستلامي العهدة الموضحة، وأتعهد بالحفاظ عليها وإعادتها فور الطلب.`;
     }
+
+    // تجهيز صورة التوقيع
+    document.getElementById('printSignatureImg').src = signaturePad.isEmpty() ? loadedSignature : signaturePad.toDataURL();
+    document.getElementById('printSignatureImg').style.display = "block";
+    
+    setTimeout(() => { 
+        window.print(); 
+        headerTitle.innerText = "IT Asset Handover | استمارة عهدة"; 
+    }, 500);
+}
 
     function checkTransfer() {
         document.getElementById('transferSection').style.display = document.getElementById('transType').value === 'Transfer' ? 'block' : 'none';
