@@ -267,12 +267,30 @@
     };
 
     function resetForm() {
-        document.getElementById('assetForm').reset();
-        signaturePad.clear(); newSignaturePad.clear();
-        loadedSignature = "";
-        document.getElementById('employeeAssetsWrapper').style.display = "none";
-        document.getElementById('transferSection').style.display = "none";
-    }
+    // 1. مسح نصوص الفورم بالكامل
+    document.getElementById('assetForm').reset();
+    
+    // 2. مسح لوحات التوقيع (الرسم)
+    signaturePad.clear(); 
+    newSignaturePad.clear();
+    
+    // 3. مسح المتغيرات المخزنة (الذاكرة المؤقتة)
+    loadedSignature = ""; 
+    
+    // 4. إخفاء ومسح صور المعاينة الخاصة بالطباعة
+    const printImg = document.getElementById('printSignatureImg');
+    printImg.src = ""; 
+    printImg.style.display = "none";
+    
+    // 5. إخفاء الجداول والأقسام الإضافية
+    document.getElementById('employeeAssetsWrapper').style.display = "none";
+    document.getElementById('transferSection').style.display = "none";
+    
+    // 6. مسح خانة البحث نفسها
+    document.getElementById('searchID').value = "";
+    
+    console.log("System Reset: All fields and signatures cleared.");
+}
 
     function checkTransfer() {
         document.getElementById('transferSection').style.display = document.getElementById('transType').value === 'Transfer' ? 'block' : 'none';
