@@ -34,11 +34,15 @@
         .asset-table th { background: var(--blue); color: white; padding: 8px; }
         .asset-table td { padding: 8px; border-bottom: 1px solid #eee; text-align: center; }
 
+        /* التنسيق القانوني للطباعة */
+        #legalDisclaimer { display: none; margin-top: 25px; padding: 10px; border-top: 1px solid #000; font-size: 0.8rem; line-height: 1.4; }
+
         @media print {
             .no-print, header, #loginOverlay, .tabs, button, .signature-wrapper, #employeeAssetsWrapper { display: none !important; }
             .container { display: block !important; box-shadow: none; width: 100%; border: none; }
             .print-header { display: flex !important; align-items: center; justify-content: center; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px; }
             #printSignatureImg { display: block !important; }
+            #legalDisclaimer { display: block !important; }
             input, select, textarea { border: none !important; font-weight: bold; background: transparent !important; }
         }
         .print-header { display: none; }
@@ -49,7 +53,6 @@
 <div id="loginOverlay">
     <div class="login-card">
         <img src="logo.png" alt="UEC Logo" onerror="this.src='https://via.placeholder.com/100?text=UEC'">
-        <h2 style="color:var(--blue); margin-top:0;">UEC ASSETS</h2>
         <input type="text" id="userInput" placeholder="Username">
         <input type="password" id="passInput" placeholder="Password">
         <button onclick="handleLogin()" class="btn-blue" id="loginBtn">Login</button>
@@ -59,7 +62,7 @@
 <header>
     <div class="logo-container">
         <img src="logo.png" alt="Logo">
-        <div><b style="color:var(--blue);">UEC</b> <span style="color:var(--gold); font-size:0.6rem; display:block;">UNIVERSITY OF EAST CAPITAL</span></div>
+        <div><b style="color:var(--blue);">UEC</b> <span style="color:var(--gold); font-size:0.6rem; display:block; font-weight:bold;">UNIVERSITY OF EAST CAPITAL</span></div>
     </div>
     <div style="display:flex; gap:8px;">
         <span id="adminInfo" style="font-size:0.75rem;"></span>
@@ -94,20 +97,21 @@
                 <div style="grid-column: span 2">
                     <label id="lblTrans">نوع العملية</label>
                     <select id="transType" onchange="checkTransfer()">
-                        <option value="Issue">Issue (صرف)</option>
-                        <option value="Return">Return (إرجاع)</option>
+                        <option value="Issue">Issue (صرف عهدة)</option>
+                        <option value="Return">Return (إرجاع عهدة)</option>
                         <option value="Transfer">Transfer (نقل ملكية)</option>
                     </select>
                 </div>
                 <div><label id="lblID">الرقم الوظيفي</label><input type="text" id="empID" required></div>
                 <div><label id="lblName">اسم الموظف</label><input type="text" id="empName" required></div>
-                <div><label id="lblType">الجهاز</label><select id="assetList"></select></div>
-                <div><label id="lblSN">S/N</label><input type="text" id="sn" required></div>
-                <div style="grid-column: span 2"><label id="lblSpecs">المواصفات</label><textarea id="specs"></textarea></div>
+                <div><label id="lblType">نوع الجهاز</label><select id="assetList"></select></div>
+                <div><label id="lblSN">السيريال (S/N)</label><input type="text" id="sn" required></div>
+                <div style="grid-column: span 2"><label id="lblSpecs">المواصفات</label><textarea id="specs" rows="2"></textarea></div>
             </div>
 
+            <!-- قسم النقل المطور -->
             <div id="transferSection" class="no-print" style="display:none; background:#fff9eb; padding:15px; border-radius:10px; border:1px solid var(--gold); margin-bottom:15px;">
-                <h4 style="margin:0 0 10px 0; color:var(--blue);">بيانات الموظف المستلم الجديد:</h4>
+                <h4 style="margin:0 0 10px 0; color:var(--blue);">بيانات المستلم الجديد (الطرف الثاني):</h4>
                 <div class="grid">
                     <input type="text" id="newEmpID" placeholder="الرقم الوظيفي الجديد">
                     <input type="text" id="newEmpName" placeholder="اسم المستلم الجديد">
@@ -116,33 +120,47 @@
                 <div class="signature-wrapper"><canvas id="new-signature-pad"></canvas></div>
             </div>
 
+            <!-- جدول العهدة المتعددة -->
             <div id="employeeAssetsWrapper" class="no-print">
-                <h4 id="lblAssetsTitle" style="color:var(--blue); border-bottom:2px solid var(--gold);">العهدة الحالية</h4>
-                <table class="asset-table"><thead><tr><th>التاريخ</th><th>الجهاز</th><th>S/N</th><th>اختيار</th></tr></thead><tbody id="employeeAssetsBody"></tbody></table>
+                <h4 id="lblAssetsTitle" style="color:var(--blue); border-bottom:2px solid var(--gold);">العهدة الحالية المسجلة</h4>
+                <table class="asset-table">
+                    <thead><tr><th>التاريخ</th><th>الجهاز</th><th>S/N</th><th>اختيار</th></tr></thead>
+                    <tbody id="employeeAssetsBody"></tbody>
+                </table>
             </div>
 
-            <label id="lblSign" class="no-print">توقيع الموظف (الحالي):</label>
+            <label id="lblSign" class="no-print">توقيع الموظف:</label>
             <div class="signature-wrapper no-print"><canvas id="signature-pad"></canvas></div>
+            
+            <!-- قسم الإقرار القانوني للطباعة -->
+            <div id="legalDisclaimer">
+                <p id="legalText"></p>
+                <div style="display: flex; justify-content: space-between; margin-top: 20px;">
+                    <span>توقيع الموظف (المقر): ......................</span>
+                    <span>اعتماد مدير الـ IT: ......................</span>
+                </div>
+            </div>
+
             <img id="printSignatureImg">
             
             <div class="grid no-print" style="margin-top:20px">
                 <button type="submit" id="saveBtn" class="btn-blue">حفظ البيانات</button>
-                <button type="button" onclick="preparePrint()" id="btnPrint" class="btn-gold">طباعة</button>
+                <button type="button" onclick="preparePrint()" id="btnPrint" class="btn-gold">طباعة المستند</button>
             </div>
         </form>
     </div>
 
     <div id="dashSection" style="display:none;">
-        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; text-align:center;">
-             <div style="background:#fff; padding:10px; border-radius:10px; border-bottom:4px solid var(--blue);"><h3>Total</h3><p id="totalAssets">0</p></div>
-             <div style="background:#fff; padding:10px; border-radius:10px; border-bottom:4px solid green;"><h3>Issued</h3><p id="issuedAssets">0</p></div>
-             <div style="background:#fff; padding:10px; border-radius:10px; border-bottom:4px solid var(--gold);"><h3>Stock</h3><p id="stockAssets">0</p></div>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:15px; text-align:center;">
+             <div style="background:#fff; padding:20px; border-radius:10px; border-bottom:5px solid var(--blue);"><h3>Total</h3><p id="totalAssets" style="font-size:2rem; font-weight:bold;">0</p></div>
+             <div style="background:#fff; padding:20px; border-radius:10px; border-bottom:5px solid green;"><h3>Issued</h3><p id="issuedAssets" style="font-size:2rem; font-weight:bold; color:green;">0</p></div>
+             <div style="background:#fff; padding:20px; border-radius:10px; border-bottom:5px solid var(--gold);"><h3>In Stock</h3><p id="stockAssets" style="font-size:2rem; font-weight:bold; color:var(--gold);">0</p></div>
         </div>
     </div>
 </div>
 
 <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz-r35RwmB06Ydm2EkXF5P2yMpXu-d4QeeseN5QJ9UpKGNWsqQB3P27OvVT-ZjcYRtC/exec"; 
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz-r35RwmB06Ydm2EkXF5P2yMpXu-d4QeeseN5QJ9UpKGNWsqQB3P27OvVT-ZjcYRtC/exec"; // استبدل برابط النشر الخاص بك
     const canvas = document.getElementById('signature-pad');
     const signaturePad = new SignaturePad(canvas);
     const newCanvas = document.getElementById('new-signature-pad');
@@ -152,8 +170,8 @@
     let loadedSignature = "";
 
     const translations = {
-        ar: { search: "البحث...", btnSearch: "بحث", trans: "العملية", id: "الرقم", name: "الاسم", type: "الجهاز", sn: "S/N", specs: "المواصفات", sign: "التوقيع", save: "حفظ", print: "طباعة", langBtn: "English", assetsTitle: "العهدة الحالية" },
-        en: { search: "Search...", btnSearch: "Search", trans: "Process", id: "ID", name: "Name", type: "Asset", sn: "S/N", specs: "Specs", sign: "Signature", save: "Save", print: "Print", langBtn: "العربية", assetsTitle: "Current Assets" }
+        ar: { search: "البحث...", btnSearch: "بحث", trans: "العملية", id: "الرقم", name: "الاسم", type: "الجهاز", sn: "S/N", specs: "المواصفات", sign: "التوقيع", save: "حفظ البيانات", print: "طباعة", langBtn: "English", assetsTitle: "العهدة الحالية" },
+        en: { search: "Search...", btnSearch: "Search", trans: "Process", id: "ID", name: "Name", type: "Asset", sn: "S/N", specs: "Specs", sign: "Signature", save: "Save Data", print: "Print", langBtn: "العربية", assetsTitle: "Current Assets" }
     };
 
     function applyLang() {
@@ -175,7 +193,7 @@
     function handleLogin() {
         const user = document.getElementById('userInput').value;
         const pass = document.getElementById('passInput').value;
-        if(!user || !pass) return;
+        if(!user || !pass) return alert("Please fill login fields");
         fetch(`${SCRIPT_URL}?action=login`, { method: 'POST', body: JSON.stringify({user, pass}) })
         .then(res => res.json()).then(data => {
             if(data.status === "success") {
@@ -199,7 +217,7 @@
 
     function searchEmployee() {
         const empID = document.getElementById('searchID').value;
-        if(!empID) return;
+        if(!empID) return alert("ادخل الرقم الوظيفي أولاً");
         fetch(`${SCRIPT_URL}?action=search`, { method: 'POST', body: JSON.stringify({empID}) })
         .then(res => res.json()).then(res => {
             const tbody = document.getElementById('employeeAssetsBody');
@@ -219,10 +237,10 @@
 
                 Object.values(current).reverse().forEach(r => {
                     const tr = document.createElement('tr');
-                    tr.innerHTML = `<td>${new Date(r[0]).toLocaleDateString()}</td><td>${r[5]}</td><td>${r[6]}</td><td><button type="button" class="btn-select" onclick="selectAsset('${r[5]}','${r[6]}','${r[7].replace(/\n/g,' ')}')">✓</button></td>`;
+                    tr.innerHTML = `<td>${new Date(r[0]).toLocaleDateString()}</td><td>${r[5]}</td><td>${r[6]}</td><td><button type="button" class="btn-gold" style="padding:2px 8px; font-size:0.7rem;" onclick="selectAsset('${r[5]}','${r[6]}','${r[7].replace(/\n/g,' ')}')">✓</button></td>`;
                     tbody.appendChild(tr);
                 });
-            } else { alert("لا توجد عهدة"); document.getElementById('employeeAssetsWrapper').style.display = "none"; }
+            } else { alert("لا توجد عهدة نشطة حالياً"); document.getElementById('employeeAssetsWrapper').style.display = "none"; }
         });
     }
 
@@ -236,19 +254,16 @@
         e.preventDefault();
         const type = document.getElementById('transType').value;
         
-        // التحقق من التوقيع الأساسي
-        if(signaturePad.isEmpty() && !loadedSignature) return alert("التوقيع إلزامي!");
-        
-        // التحقق من توقيع المستلم الجديد في حالة النقل
+        // منع الحفظ بدون توقيع (أساسي أو محمل)
+        if(signaturePad.isEmpty() && !loadedSignature) return alert("عذراً، التوقيع إلزامي لإتمام العملية!");
         if(type === 'Transfer' && newSignaturePad.isEmpty()) return alert("يجب توقيع المستلم الجديد أيضاً!");
 
         const btn = document.getElementById('saveBtn');
-        btn.disabled = true; btn.innerText = "...";
+        btn.disabled = true; btn.innerText = "Saving...";
 
         const payload = {
             admin: localStorage.getItem('uec_user'),
-            trans: type,
-            transType: type,
+            trans: type, transType: type,
             empID: document.getElementById('empID').value,
             empName: document.getElementById('empName').value,
             asset: document.getElementById('assetList').value,
@@ -262,46 +277,46 @@
 
         fetch(`${SCRIPT_URL}?action=save`, { method: 'POST', body: JSON.stringify(payload) })
         .then(res => res.text()).then(t => {
-            if(t.includes("Success")) { alert("تمت العملية بنجاح!"); resetForm(); }
+            if(t.includes("Success")) { alert("تم الحفظ بنجاح!"); resetForm(); }
             btn.disabled = false; btn.innerText = translations[lang].save;
         });
     };
 
     function resetForm() {
-    // 1. مسح نصوص الفورم بالكامل
-    document.getElementById('assetForm').reset();
-    
-    // 2. مسح لوحات التوقيع (الرسم)
-    signaturePad.clear(); 
-    newSignaturePad.clear();
-    
-    // 3. مسح المتغيرات المخزنة (الذاكرة المؤقتة)
-    loadedSignature = ""; 
-    
-    // 4. إخفاء ومسح صور المعاينة الخاصة بالطباعة
-    const printImg = document.getElementById('printSignatureImg');
-    printImg.src = ""; 
-    printImg.style.display = "none";
-    
-    // 5. إخفاء الجداول والأقسام الإضافية
-    document.getElementById('employeeAssetsWrapper').style.display = "none";
-    document.getElementById('transferSection').style.display = "none";
-    
-    // 6. مسح خانة البحث نفسها
-    document.getElementById('searchID').value = "";
-    
-    console.log("System Reset: All fields and signatures cleared.");
-}
+        document.getElementById('assetForm').reset();
+        signaturePad.clear(); newSignaturePad.clear();
+        loadedSignature = "";
+        document.getElementById('printSignatureImg').src = "";
+        document.getElementById('printSignatureImg').style.display = "none";
+        document.getElementById('employeeAssetsWrapper').style.display = "none";
+        document.getElementById('transferSection').style.display = "none";
+        document.getElementById('searchID').value = "";
+    }
+
+    function preparePrint() {
+        const type = document.getElementById('transType').value;
+        const headerTitle = document.querySelector('.print-header p');
+        const legalText = document.getElementById('legalText');
+        
+        if (type === 'Return') {
+            headerTitle.innerText = "IT Asset Clearance | إخلاء طرف عهدة";
+            legalText.innerText = "يقر قسم IT بجامعة UEC باستلام الجهاز المذكور أعلاه من الموظف، وبذلك يعتبر إخلاء طرف له بخصوص هذه العهدة.";
+        } else if (type === 'Transfer') {
+            headerTitle.innerText = "Asset Transfer Form | نموذج نقل عهدة";
+            legalText.innerText = "يقر الطرفان بنقل ملكية العهدة أعلاه، ويتحمل الطرف الثاني كامل المسؤولية من تاريخ التوقيع.";
+        } else {
+            headerTitle.innerText = "IT Asset Handover | استمارة استلام عهدة";
+            legalText.innerText = "أقر أنا الموظف المذكور أعلاه باستلامي العهدة الموضحة، وأتعهد بالحفاظ عليها وإعادتها فور الطلب.";
+        }
+
+        document.getElementById('printSignatureImg').src = signaturePad.isEmpty() ? loadedSignature : signaturePad.toDataURL();
+        document.getElementById('printSignatureImg').style.display = "block";
+        setTimeout(() => { window.print(); headerTitle.innerText = "IT Asset Handover | استمارة عهدة"; }, 500);
+    }
 
     function checkTransfer() {
         document.getElementById('transferSection').style.display = document.getElementById('transType').value === 'Transfer' ? 'block' : 'none';
         resizeCanvas();
-    }
-
-    function preparePrint() {
-        document.getElementById('printSignatureImg').src = signaturePad.isEmpty() ? loadedSignature : signaturePad.toDataURL();
-        document.getElementById('printSignatureImg').style.display = "block";
-        setTimeout(() => window.print(), 500);
     }
 
     function switchTab(t) {
@@ -321,7 +336,6 @@
 
     function toggleLang() { lang = lang === 'ar' ? 'en' : 'ar'; localStorage.setItem('uec_lang', lang); applyLang(); }
     function handleLogout() { localStorage.clear(); window.location.reload(); }
-    
     function resizeCanvas() {
         [canvas, newCanvas].forEach(c => {
             const r = Math.max(window.devicePixelRatio || 1, 1);
@@ -329,7 +343,6 @@
             c.getContext("2d").scale(r, r);
         });
     }
-
     window.onresize = resizeCanvas;
     if(localStorage.getItem('uec_user')) showApp();
 </script>
