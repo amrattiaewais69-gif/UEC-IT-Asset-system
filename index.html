@@ -99,7 +99,7 @@
         </div>
     </div>
 
-    <!-- قسم النماذج الأصلي -->
+    <!-- قسم النماذج -->
     <div id="formSection">
         <div class="search-area no-print">
             <input type="text" id="searchID" placeholder="رقم الموظف للبحث...">
@@ -137,7 +137,7 @@
             <div id="employeeAssetsWrapper" class="no-print">
                 <h4 id="lblAssetsTitle" style="color:var(--blue); border-bottom:2px solid var(--gold);">العهدة الحالية</h4>
                 <table class="asset-table">
-                    <thead><tr><th>التاريخ</th><th>الجهاز</th><th>S/N</th><th>اختيار</th></tr></thead>
+                    <thead><tr><th id="thDate">التاريخ</th><th id="thAsset">الجهاز</th><th id="thSN">S/N</th><th id="thSelect">اختيار</th></tr></thead>
                     <tbody id="employeeAssetsBody"></tbody>
                 </table>
             </div>
@@ -159,39 +159,38 @@
         </form>
     </div>
 
-    <!-- قسم الإحصائيات مع التعديل الجديد -->
+    <!-- قسم الإحصائيات مع ترجمة كاملة -->
     <div id="dashSection" style="display:none;">
         <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:15px; text-align:center; margin-bottom:25px;">
-             <div style="background:#fff; padding:20px; border-radius:10px; border-bottom:5px solid var(--blue);"><h3>إجمالي الأجهزة</h3><p id="totalAssets" style="font-size:2rem; font-weight:bold;">0</p></div>
-             <div style="background:#fff; padding:20px; border-radius:10px; border-bottom:5px solid green;"><h3>خارج (عهدة)</h3><p id="issuedAssets" style="font-size:2rem; font-weight:bold; color:green;">0</p></div>
-             <div style="background:#fff; padding:20px; border-radius:10px; border-bottom:5px solid var(--gold);"><h3>داخل (مخزن)</h3><p id="stockAssets" style="font-size:2rem; font-weight:bold; color:var(--gold);">0</p></div>
+             <div style="background:#fff; padding:20px; border-radius:10px; border-bottom:5px solid var(--blue);"><h3 id="statTotal">إجمالي الأجهزة</h3><p id="totalAssets" style="font-size:2rem; font-weight:bold;">0</p></div>
+             <div style="background:#fff; padding:20px; border-radius:10px; border-bottom:5px solid green;"><h3 id="statIssued">خارج (عهدة)</h3><p id="issuedAssets" style="font-size:2rem; font-weight:bold; color:green;">0</p></div>
+             <div style="background:#fff; padding:20px; border-radius:10px; border-bottom:5px solid var(--gold);"><h3 id="statStock">داخل (مخزن)</h3><p id="stockAssets" style="font-size:2rem; font-weight:bold; color:var(--gold);">0</p></div>
         </div>
 
-        <!-- منطقة البحث المضافة -->
         <div class="search-audit-box" style="background:#eef2f3; padding:20px; border-radius:12px; margin-bottom:20px; border-right:8px solid var(--blue);">
-            <h4 style="margin:0 0 10px 0; color:var(--blue);">🔍 استعلام عن سجل موظف:</h4>
+            <h4 id="lblAuditTitle" style="margin:0 0 10px 0; color:var(--blue);">🔍 استعلام عن سجل موظف:</h4>
             <div style="display:flex; gap:10px;">
                 <input type="text" id="dashSearchID" placeholder="أدخل ID الموظف هنا..." style="margin-bottom:0;">
-                <button onclick="auditEmployee()" class="btn-gold" style="width:150px;">بحث شامل</button>
+                <button onclick="auditEmployee()" class="btn-gold" id="btnAudit" style="width:150px;">بحث شامل</button>
             </div>
         </div>
 
         <div id="auditResults" style="display:none;">
             <div class="grid">
                 <div style="background:white; padding:15px; border-radius:10px; border:1px solid #eee;">
-                    <h4 style="color:var(--blue); border-bottom:2px solid var(--gold); padding-bottom:5px;">📋 العهدة الحالية النشطة</h4>
-                    <table class="asset-table"><thead id="curHead"><tr><th>الجهاز</th><th>S/N</th><th>التاريخ</th></tr></thead><tbody id="auditCurrentBody"></tbody></table>
+                    <h4 id="lblActiveAssets" style="color:var(--blue); border-bottom:2px solid var(--gold); padding-bottom:5px;">📋 العهدة الحالية النشطة</h4>
+                    <table class="asset-table"><thead><tr><th id="thDev">الجهاز</th><th>S/N</th><th id="thDat">التاريخ</th></tr></thead><tbody id="auditCurrentBody"></tbody></table>
                 </div>
                 <div style="background:white; padding:15px; border-radius:10px; border:1px solid #eee;">
-                    <h4 style="color:var(--blue); border-bottom:2px solid var(--gold); padding-bottom:5px;">📊 ملخص النشاط</h4>
-                    <p>عمليات الاستلام: <b id="auditIssuedCount" style="color:green;">0</b></p>
-                    <p>عمليات الإرجاع: <b id="auditReturnedCount" style="color:red;">0</b></p>
+                    <h4 id="lblSummaryTitle" style="color:var(--blue); border-bottom:2px solid var(--gold); padding-bottom:5px;">📊 ملخص النشاط</h4>
+                    <p><span id="lblIssuedCount">عمليات الاستلام:</span> <b id="auditIssuedCount" style="color:green;">0</b></p>
+                    <p><span id="lblReturnedCount">عمليات الإرجاع:</span> <b id="auditReturnedCount" style="color:red;">0</b></p>
                 </div>
             </div>
             <div style="background:white; padding:15px; border-radius:10px; border:1px solid #eee; margin-top:15px;">
-                <h4 style="color:var(--blue); border-bottom:2px solid var(--gold); padding-bottom:5px;">🕒 السجل الزمني الكامل</h4>
+                <h4 id="lblTimelineTitle" style="color:var(--blue); border-bottom:2px solid var(--gold); padding-bottom:5px;">🕒 السجل الزمني الكامل</h4>
                 <div style="max-height:300px; overflow-y:auto;">
-                    <table class="asset-table"><thead><tr><th>التاريخ</th><th>النوع</th><th>الجهاز</th><th>S/N</th><th>الأدمن</th></tr></thead><tbody id="auditHistoryBody"></tbody></table>
+                    <table class="asset-table"><thead><tr><th id="thT1">التاريخ</th><th id="thT2">النوع</th><th id="thT3">الجهاز</th><th>S/N</th><th id="thT4">الأدمن</th></tr></thead><tbody id="auditHistoryBody"></tbody></table>
                 </div>
             </div>
         </div>
@@ -209,14 +208,35 @@
     let loadedSignature = "";
 
     const translations = {
-        ar: { search: "البحث...", btnSearch: "بحث", trans: "العملية", id: "الرقم", name: "الاسم", type: "الجهاز", sn: "S/N", specs: "المواصفات", sign: "التوقيع", save: "حفظ البيانات", print: "طباعة", langBtn: "English", assetsTitle: "العهدة الحالية" },
-        en: { search: "Search...", btnSearch: "Search", trans: "Process", id: "ID", name: "Name", type: "Asset", sn: "S/N", specs: "Specs", sign: "Signature", save: "Save Data", print: "Print", langBtn: "العربية", assetsTitle: "Current Assets" }
+        ar: { 
+            formTab: "النماذج", dashTab: "الإحصائيات", searchPlace: "رقم الموظف للبحث...", btnSearch: "بحث", 
+            trans: "نوع العملية", id: "الرقم الوظيفي", name: "اسم الموظف", type: "الجهاز", sn: "S/N", specs: "المواصفات", 
+            sign: "التوقيع:", save: "حفظ البيانات", print: "طباعة", langBtn: "English", assetsTitle: "العهدة الحالية",
+            statTotal: "إجمالي الأجهزة", statIssued: "خارج (عهدة)", statStock: "داخل (مخزن)",
+            auditTitle: "🔍 استعلام عن سجل موظف:", auditPlace: "أدخل ID الموظف هنا...", btnAudit: "بحث شامل",
+            activeAssets: "📋 العهدة الحالية النشطة", summaryTitle: "📊 ملخص النشاط", timelineTitle: "🕒 السجل الزمني الكامل",
+            issuedCount: "عمليات الاستلام:", returnedCount: "عمليات الإرجاع:",
+            thDate: "التاريخ", thAsset: "الجهاز", thSelect: "اختيار", thAdmin: "الأدمن", thType: "النوع"
+        },
+        en: { 
+            formTab: "Forms", dashTab: "Statistics", searchPlace: "Employee ID to search...", btnSearch: "Search", 
+            trans: "Process Type", id: "Employee ID", name: "Employee Name", type: "Asset Type", sn: "S/N", specs: "Specifications", 
+            sign: "Signature:", save: "Save Data", print: "Print", langBtn: "العربية", assetsTitle: "Current Assets",
+            statTotal: "Total Assets", statIssued: "Issued (Out)", statStock: "In Stock",
+            auditTitle: "🔍 Employee History Inquiry:", auditPlace: "Enter Emp ID here...", btnAudit: "Full Audit",
+            activeAssets: "📋 Current Active Assets", summaryTitle: "📊 Activity Summary", timelineTitle: "🕒 Full Timeline History",
+            issuedCount: "Total Issued:", returnedCount: "Total Returned:",
+            thDate: "Date", thAsset: "Asset", thSelect: "Select", thAdmin: "Admin", thType: "Type"
+        }
     };
 
     function applyLang() {
         const d = translations[lang];
         document.getElementById('mainHtml').dir = lang === 'ar' ? 'rtl' : 'ltr';
         document.getElementById('langBtn').innerText = d.langBtn;
+        document.getElementById('formTab').innerText = d.formTab;
+        document.getElementById('dashTab').innerText = d.dashTab;
+        document.getElementById('searchID').placeholder = d.searchPlace;
         document.getElementById('btnSearch').innerText = d.btnSearch;
         document.getElementById('lblTrans').innerText = d.trans;
         document.getElementById('lblID').innerText = d.id;
@@ -227,6 +247,27 @@
         document.getElementById('lblSign').innerText = d.sign;
         document.getElementById('saveBtn').innerText = d.save;
         document.getElementById('btnPrint').innerText = d.print;
+        document.getElementById('lblAssetsTitle').innerText = d.assetsTitle;
+        
+        // ترجمة الإحصائيات
+        document.getElementById('statTotal').innerText = d.statTotal;
+        document.getElementById('statIssued').innerText = d.statIssued;
+        document.getElementById('statStock').innerText = d.statStock;
+        document.getElementById('lblAuditTitle').innerText = d.auditTitle;
+        document.getElementById('dashSearchID').placeholder = d.auditPlace;
+        document.getElementById('btnAudit').innerText = d.btnAudit;
+        document.getElementById('lblActiveAssets').innerText = d.activeAssets;
+        document.getElementById('lblSummaryTitle').innerText = d.summaryTitle;
+        document.getElementById('lblTimelineTitle').innerText = d.timelineTitle;
+        document.getElementById('lblIssuedCount').innerText = d.issuedCount;
+        document.getElementById('lblReturnedCount').innerText = d.returnedCount;
+        
+        // جداول
+        ["thDate","thDat","thT1"].forEach(id => document.getElementById(id).innerText = d.thDate);
+        ["thAsset","thDev","thT3"].forEach(id => document.getElementById(id).innerText = d.thAsset);
+        document.getElementById("thSelect").innerText = d.thSelect;
+        document.getElementById("thT2").innerText = d.thType;
+        document.getElementById("thT4").innerText = d.thAdmin;
     }
 
     function handleLogin() {
@@ -267,19 +308,17 @@
                 document.getElementById('empID').value = last[3];
                 document.getElementById('empName').value = last[4];
                 if(last[8]) { loadedSignature = last[8]; }
-
                 let current = {};
                 res.data.forEach(r => {
                     if(r[2].includes("Issue") || r[2].includes("In")) current[r[6]] = r;
                     else if(r[2].includes("Return") || r[2].includes("Out")) delete current[r[6]];
                 });
-
                 Object.values(current).reverse().forEach(r => {
                     const tr = document.createElement('tr');
                     tr.innerHTML = `<td>${new Date(r[0]).toLocaleDateString()}</td><td>${r[5]}</td><td>${r[6]}</td><td><button type="button" class="btn-gold" style="padding:2px 5px; font-size:0.7rem;" onclick="selectAsset('${r[5]}','${r[6]}','${r[7].replace(/\n/g,' ')}')">✓</button></td>`;
                     tbody.appendChild(tr);
                 });
-            } else { alert("لا توجد عهدة نشطة"); document.getElementById('employeeAssetsWrapper').style.display = "none"; }
+            } else { alert(lang === 'ar' ? "لا توجد عهدة نشطة" : "No active assets"); document.getElementById('employeeAssetsWrapper').style.display = "none"; }
         });
     }
 
@@ -289,27 +328,25 @@
         document.getElementById('specs').value = sp;
     }
 
-    // وظيفة البحث الشامل الجديدة
     function auditEmployee() {
         const empID = document.getElementById('dashSearchID').value;
-        if(!empID) return alert("يرجى إدخال ID");
+        if(!empID) return alert(lang === 'ar' ? "يرجى إدخال ID" : "Please enter ID");
         const btn = event.target; btn.innerText = "...";
         fetch(`${SCRIPT_URL}?action=getEmployeeFullHistory`, { method: 'POST', body: JSON.stringify({empID}) })
         .then(res => res.json()).then(data => {
             document.getElementById('auditResults').style.display = "block";
-            document.getElementById('auditCurrentBody').innerHTML = data.current.length ? data.current.map(r => `<tr><td>${r[5]}</td><td>${r[6]}</td><td>${new Date(r[0]).toLocaleDateString()}</td></tr>`).join('') : '<tr><td colspan="3">لا توجد عهدة</td></tr>';
+            document.getElementById('auditCurrentBody').innerHTML = data.current.length ? data.current.map(r => `<tr><td>${r[5]}</td><td>${r[6]}</td><td>${new Date(r[0]).toLocaleDateString()}</td></tr>`).join('') : '<tr><td colspan="3">N/A</td></tr>';
             document.getElementById('auditIssuedCount').innerText = data.stats.issued;
             document.getElementById('auditReturnedCount').innerText = data.stats.returned;
             document.getElementById('auditHistoryBody').innerHTML = data.history.map(h => `<tr><td>${new Date(h.date).toLocaleDateString()}</td><td style="color:${h.type.includes('Issue')?'green':'red'}">${h.type}</td><td>${h.asset}</td><td>${h.sn}</td><td>${h.admin}</td></tr>`).join('');
-            btn.innerText = "بحث شامل";
+            btn.innerText = translations[lang].btnAudit;
         });
     }
 
     document.getElementById('assetForm').onsubmit = function(e) {
         e.preventDefault();
         const type = document.getElementById('transType').value;
-        if(signaturePad.isEmpty() && !loadedSignature) return alert("التوقيع إلزامي!");
-        if(type === 'Transfer' && newSignaturePad.isEmpty()) return alert("توقيع المستلم إلزامي!");
+        if(signaturePad.isEmpty() && !loadedSignature) return alert(lang === 'ar' ? "التوقيع إلزامي!" : "Signature Required!");
         const btn = document.getElementById('saveBtn'); btn.disabled = true; btn.innerText = "Saving...";
         const payload = {
             admin: localStorage.getItem('uec_user'), trans: type, transType: type,
@@ -320,7 +357,7 @@
         };
         fetch(`${SCRIPT_URL}?action=save`, { method: 'POST', body: JSON.stringify(payload) })
         .then(res => res.text()).then(t => {
-            if(t.includes("Success")) { alert("تم الحفظ!"); resetForm(); }
+            if(t.includes("Success")) { alert(lang === 'ar' ? "تم الحفظ!" : "Saved!"); resetForm(); }
             btn.disabled = false; btn.innerText = translations[lang].save;
         });
     };
