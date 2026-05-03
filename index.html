@@ -44,29 +44,17 @@
         .asset-table th { background: var(--blue); color: white; padding: 8px; }
         .asset-table td { padding: 8px; border-bottom: 1px solid #eee; text-align: center; }
 
-        /* منطقة الطباعة المحدثة */
+        /* الطباعة */
         #legalDisclaimer { display: none; margin-top: 25px; padding: 10px; border-top: 1px solid #000; font-size: 0.85rem; line-height: 1.5; }
         #printSignaturesWrapper { display: none; margin-top: 30px; width: 100%; gap: 20px; }
 
         @media print {
-            .no-print, header, #loginOverlay, .tabs, button, .signature-wrapper, #employeeAssetsWrapper { display: none !important; }
+            .no-print, header, #loginOverlay, .tabs, button, .signature-wrapper, #employeeAssetsWrapper, .search-audit-box { display: none !important; }
             .container { display: block !important; box-shadow: none; width: 100%; border: none; }
             .print-header { display: flex !important; align-items: center; justify-content: center; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px; }
             #legalDisclaimer { display: block !important; }
-            
-            #printSignaturesWrapper { 
-                display: flex !important; 
-                flex-direction: row !important; 
-                justify-content: space-between !important; 
-                align-items: flex-start !important;
-            }
+            #printSignaturesWrapper { display: flex !important; flex-direction: row !important; justify-content: space-between !important; align-items: flex-start !important; }
             #printSignaturesWrapper > div { flex: 1; max-width: 45%; text-align: center; }
-            #printSignatureImgA, #printSignatureImgB { 
-                max-width: 100% !important; 
-                height: auto; 
-                max-height: 70px; 
-                object-fit: contain; 
-            }
             input, select, textarea { border: none !important; font-weight: bold; background: transparent !important; }
         }
         .print-header { display: none; }
@@ -103,7 +91,6 @@
         <button id="dashTab" class="tab-btn" onclick="switchTab('dash')" style="display:none;">الإحصائيات</button>
     </div>
 
-    <!-- ترويسة الطباعة -->
     <div class="print-header">
         <img src="logo.png" height="50">
         <div style="text-align:center; margin-right:15px;">
@@ -112,6 +99,7 @@
         </div>
     </div>
 
+    <!-- قسم النماذج الأصلي -->
     <div id="formSection">
         <div class="search-area no-print">
             <input type="text" id="searchID" placeholder="رقم الموظف للبحث...">
@@ -136,7 +124,6 @@
                 <div style="grid-column: span 2"><label id="lblSpecs">المواصفات</label><textarea id="specs" rows="2"></textarea></div>
             </div>
 
-            <!-- قسم النقل للمستلم الجديد -->
             <div id="transferSection" class="no-print" style="display:none; background:#fff9eb; padding:15px; border-radius:10px; border:1px solid var(--gold); margin-bottom:15px;">
                 <h4 style="margin:0 0 10px 0; color:var(--blue);">بيانات المستلم الجديد:</h4>
                 <div class="grid">
@@ -147,7 +134,6 @@
                 <div class="signature-wrapper"><canvas id="new-signature-pad"></canvas></div>
             </div>
 
-            <!-- جدول العهدة الحالية للبحث -->
             <div id="employeeAssetsWrapper" class="no-print">
                 <h4 id="lblAssetsTitle" style="color:var(--blue); border-bottom:2px solid var(--gold);">العهدة الحالية</h4>
                 <table class="asset-table">
@@ -159,21 +145,11 @@
             <label id="lblSign" class="no-print">التوقيع:</label>
             <div class="signature-wrapper no-print"><canvas id="signature-pad"></canvas></div>
             
-            <!-- نصوص الإقرار القانوني للطباعة -->
-            <div id="legalDisclaimer">
-                <p id="legalText"></p>
-            </div>
+            <div id="legalDisclaimer"><p id="legalText"></p></div>
 
-            <!-- منطقة التوقيعات المزدوجة في الطباعة -->
             <div id="printSignaturesWrapper">
-                <div>
-                    <p id="labelSignA" style="font-weight: bold; margin-bottom: 5px;">توقيع الطرف الأول</p>
-                    <img id="printSignatureImgA">
-                </div>
-                <div id="wrapperSignB" style="display: none;">
-                    <p style="font-weight: bold; margin-bottom: 5px;">توقيع الطرف الثاني (المستلم)</p>
-                    <img id="printSignatureImgB">
-                </div>
+                <div><p id="labelSignA" style="font-weight: bold; margin-bottom: 5px;">توقيع الطرف الأول</p><img id="printSignatureImgA"></div>
+                <div id="wrapperSignB" style="display: none;"><p style="font-weight: bold; margin-bottom: 5px;">توقيع الطرف الثاني (المستلم)</p><img id="printSignatureImgB"></div>
             </div>
             
             <div class="grid no-print" style="margin-top:20px">
@@ -183,12 +159,41 @@
         </form>
     </div>
 
-    <!-- قسم الإحصائيات -->
+    <!-- قسم الإحصائيات مع التعديل الجديد -->
     <div id="dashSection" style="display:none;">
-        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:15px; text-align:center;">
-             <div style="background:#fff; padding:20px; border-radius:10px; border-bottom:5px solid var(--blue);"><h3>Total</h3><p id="totalAssets" style="font-size:2rem; font-weight:bold;">0</p></div>
-             <div style="background:#fff; padding:20px; border-radius:10px; border-bottom:5px solid green;"><h3>Issued</h3><p id="issuedAssets" style="font-size:2rem; font-weight:bold; color:green;">0</p></div>
-             <div style="background:#fff; padding:20px; border-radius:10px; border-bottom:5px solid var(--gold);"><h3>Stock</h3><p id="stockAssets" style="font-size:2rem; font-weight:bold; color:var(--gold);">0</p></div>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:15px; text-align:center; margin-bottom:25px;">
+             <div style="background:#fff; padding:20px; border-radius:10px; border-bottom:5px solid var(--blue);"><h3>إجمالي الأجهزة</h3><p id="totalAssets" style="font-size:2rem; font-weight:bold;">0</p></div>
+             <div style="background:#fff; padding:20px; border-radius:10px; border-bottom:5px solid green;"><h3>خارج (عهدة)</h3><p id="issuedAssets" style="font-size:2rem; font-weight:bold; color:green;">0</p></div>
+             <div style="background:#fff; padding:20px; border-radius:10px; border-bottom:5px solid var(--gold);"><h3>داخل (مخزن)</h3><p id="stockAssets" style="font-size:2rem; font-weight:bold; color:var(--gold);">0</p></div>
+        </div>
+
+        <!-- منطقة البحث المضافة -->
+        <div class="search-audit-box" style="background:#eef2f3; padding:20px; border-radius:12px; margin-bottom:20px; border-right:8px solid var(--blue);">
+            <h4 style="margin:0 0 10px 0; color:var(--blue);">🔍 استعلام عن سجل موظف:</h4>
+            <div style="display:flex; gap:10px;">
+                <input type="text" id="dashSearchID" placeholder="أدخل ID الموظف هنا..." style="margin-bottom:0;">
+                <button onclick="auditEmployee()" class="btn-gold" style="width:150px;">بحث شامل</button>
+            </div>
+        </div>
+
+        <div id="auditResults" style="display:none;">
+            <div class="grid">
+                <div style="background:white; padding:15px; border-radius:10px; border:1px solid #eee;">
+                    <h4 style="color:var(--blue); border-bottom:2px solid var(--gold); padding-bottom:5px;">📋 العهدة الحالية النشطة</h4>
+                    <table class="asset-table"><thead id="curHead"><tr><th>الجهاز</th><th>S/N</th><th>التاريخ</th></tr></thead><tbody id="auditCurrentBody"></tbody></table>
+                </div>
+                <div style="background:white; padding:15px; border-radius:10px; border:1px solid #eee;">
+                    <h4 style="color:var(--blue); border-bottom:2px solid var(--gold); padding-bottom:5px;">📊 ملخص النشاط</h4>
+                    <p>عمليات الاستلام: <b id="auditIssuedCount" style="color:green;">0</b></p>
+                    <p>عمليات الإرجاع: <b id="auditReturnedCount" style="color:red;">0</b></p>
+                </div>
+            </div>
+            <div style="background:white; padding:15px; border-radius:10px; border:1px solid #eee; margin-top:15px;">
+                <h4 style="color:var(--blue); border-bottom:2px solid var(--gold); padding-bottom:5px;">🕒 السجل الزمني الكامل</h4>
+                <div style="max-height:300px; overflow-y:auto;">
+                    <table class="asset-table"><thead><tr><th>التاريخ</th><th>النوع</th><th>الجهاز</th><th>S/N</th><th>الأدمن</th></tr></thead><tbody id="auditHistoryBody"></tbody></table>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -274,7 +279,7 @@
                     tr.innerHTML = `<td>${new Date(r[0]).toLocaleDateString()}</td><td>${r[5]}</td><td>${r[6]}</td><td><button type="button" class="btn-gold" style="padding:2px 5px; font-size:0.7rem;" onclick="selectAsset('${r[5]}','${r[6]}','${r[7].replace(/\n/g,' ')}')">✓</button></td>`;
                     tbody.appendChild(tr);
                 });
-            } else { alert("لا توجد عهدة نشطة للموظف"); document.getElementById('employeeAssetsWrapper').style.display = "none"; }
+            } else { alert("لا توجد عهدة نشطة"); document.getElementById('employeeAssetsWrapper').style.display = "none"; }
         });
     }
 
@@ -284,97 +289,81 @@
         document.getElementById('specs').value = sp;
     }
 
+    // وظيفة البحث الشامل الجديدة
+    function auditEmployee() {
+        const empID = document.getElementById('dashSearchID').value;
+        if(!empID) return alert("يرجى إدخال ID");
+        const btn = event.target; btn.innerText = "...";
+        fetch(`${SCRIPT_URL}?action=getEmployeeFullHistory`, { method: 'POST', body: JSON.stringify({empID}) })
+        .then(res => res.json()).then(data => {
+            document.getElementById('auditResults').style.display = "block";
+            document.getElementById('auditCurrentBody').innerHTML = data.current.length ? data.current.map(r => `<tr><td>${r[5]}</td><td>${r[6]}</td><td>${new Date(r[0]).toLocaleDateString()}</td></tr>`).join('') : '<tr><td colspan="3">لا توجد عهدة</td></tr>';
+            document.getElementById('auditIssuedCount').innerText = data.stats.issued;
+            document.getElementById('auditReturnedCount').innerText = data.stats.returned;
+            document.getElementById('auditHistoryBody').innerHTML = data.history.map(h => `<tr><td>${new Date(h.date).toLocaleDateString()}</td><td style="color:${h.type.includes('Issue')?'green':'red'}">${h.type}</td><td>${h.asset}</td><td>${h.sn}</td><td>${h.admin}</td></tr>`).join('');
+            btn.innerText = "بحث شامل";
+        });
+    }
+
     document.getElementById('assetForm').onsubmit = function(e) {
         e.preventDefault();
         const type = document.getElementById('transType').value;
         if(signaturePad.isEmpty() && !loadedSignature) return alert("التوقيع إلزامي!");
-        if(type === 'Transfer' && newSignaturePad.isEmpty()) return alert("يجب توقيع المستلم الجديد!");
-
-        const btn = document.getElementById('saveBtn');
-        btn.disabled = true; btn.innerText = "Saving...";
-
+        if(type === 'Transfer' && newSignaturePad.isEmpty()) return alert("توقيع المستلم إلزامي!");
+        const btn = document.getElementById('saveBtn'); btn.disabled = true; btn.innerText = "Saving...";
         const payload = {
-            admin: localStorage.getItem('uec_user'),
-            trans: type, transType: type,
-            empID: document.getElementById('empID').value,
-            empName: document.getElementById('empName').value,
-            asset: document.getElementById('assetList').value,
-            sn: document.getElementById('sn').value,
-            specs: document.getElementById('specs').value,
-            signature: signaturePad.isEmpty() ? loadedSignature : signaturePad.toDataURL(),
-            newEmpID: document.getElementById('newEmpID').value,
-            newEmpName: document.getElementById('newEmpName').value,
-            newSignature: newSignaturePad.toDataURL()
+            admin: localStorage.getItem('uec_user'), trans: type, transType: type,
+            empID: document.getElementById('empID').value, empName: document.getElementById('empName').value,
+            asset: document.getElementById('assetList').value, sn: document.getElementById('sn').value,
+            specs: document.getElementById('specs').value, signature: signaturePad.isEmpty() ? loadedSignature : signaturePad.toDataURL(),
+            newEmpID: document.getElementById('newEmpID').value, newEmpName: document.getElementById('newEmpName').value, newSignature: newSignaturePad.toDataURL()
         };
-
         fetch(`${SCRIPT_URL}?action=save`, { method: 'POST', body: JSON.stringify(payload) })
         .then(res => res.text()).then(t => {
-            if(t.includes("Success")) { alert("تم الحفظ بنجاح!"); resetForm(); }
+            if(t.includes("Success")) { alert("تم الحفظ!"); resetForm(); }
             btn.disabled = false; btn.innerText = translations[lang].save;
         });
     };
 
     function resetForm() {
-        document.getElementById('assetForm').reset();
-        signaturePad.clear(); newSignaturePad.clear();
-        loadedSignature = "";
-        document.getElementById('employeeAssetsWrapper').style.display = "none";
-        document.getElementById('transferSection').style.display = "none";
-        document.getElementById('searchID').value = "";
-        document.getElementById('printSignaturesWrapper').style.display = "none";
+        document.getElementById('assetForm').reset(); signaturePad.clear(); newSignaturePad.clear(); loadedSignature = "";
+        document.getElementById('employeeAssetsWrapper').style.display = "none"; document.getElementById('transferSection').style.display = "none";
+        document.getElementById('searchID').value = ""; document.getElementById('printSignaturesWrapper').style.display = "none";
     }
 
-    function checkTransfer() {
-        document.getElementById('transferSection').style.display = document.getElementById('transType').value === 'Transfer' ? 'block' : 'none';
-        resizeCanvas();
-    }
+    function checkTransfer() { document.getElementById('transferSection').style.display = document.getElementById('transType').value === 'Transfer' ? 'block' : 'none'; resizeCanvas(); }
 
     function preparePrint() {
         const type = document.getElementById('transType').value;
         const headerTitle = document.querySelector('.print-header p');
         const legalText = document.getElementById('legalText');
         const sigWrapper = document.getElementById('printSignaturesWrapper');
-        const wrapB = document.getElementById('wrapperSignB');
         const imgA = document.getElementById('printSignatureImgA');
         const imgB = document.getElementById('printSignatureImgB');
-        const lblA = document.getElementById('labelSignA');
-
+        const wrapB = document.getElementById('wrapperSignB');
         const currentEmp = document.getElementById('empName').value || "................";
-        const newEmp = document.getElementById('newEmpName').value || "................";
-
         sigWrapper.style.display = "flex";
-
         if (type === 'Return') {
             headerTitle.innerText = "IT Asset Clearance | إخلاء طرف عهدة";
-            legalText.innerText = `يقر قسم IT بجامعة UEC باستلام الجهاز أعلاه من الموظف/ ${currentEmp}، وبذلك يعتبر إخلاء طرف له بخصوص هذه العهدة.`;
-            lblA.innerText = "توقيع الموظف (المسلم)";
+            legalText.innerText = `يقر قسم IT بجامعة UEC باستلام الجهاز من الموظف/ ${currentEmp}.`;
             wrapB.style.display = "none";
         } else if (type === 'Transfer') {
             headerTitle.innerText = "Asset Transfer Form | نموذج نقل عهدة";
-            legalText.innerHTML = `يقر الطرف الأول (المسلم): <b>${currentEmp}</b> بنقل ملكية العهدة أعلاه، <br> ويقر الطرف الثاني (المستلم): <b>${newEmp}</b> باستلامها وتحمل مسؤوليتها الكاملة.`;
-            lblA.innerText = "توقيع الطرف الأول (المسلم)";
-            wrapB.style.display = "block";
-            imgB.src = newSignaturePad.toDataURL();
+            legalText.innerHTML = `يقر الطرف الأول بنقل الملكية، ويقر الطرف الثاني بالاستلام.`;
+            wrapB.style.display = "block"; imgB.src = newSignaturePad.toDataURL();
         } else {
             headerTitle.innerText = "IT Asset Handover | استمارة استلام عهدة";
-            legalText.innerText = `أقر أنا الموظف/ ${currentEmp} باستلامي العهدة الموضحة أعلاه، وأتعهد بالحفاظ عليها واستخدامها لأغراض العمل فقط.`;
-            lblA.innerText = "توقيع الموظف (المستلم)";
+            legalText.innerText = `أقر أنا الموظف/ ${currentEmp} باستلامي العهدة الموضحة أعلاه.`;
             wrapB.style.display = "none";
         }
-
         imgA.src = signaturePad.isEmpty() ? loadedSignature : signaturePad.toDataURL();
-        
-        setTimeout(() => { 
-            window.print(); 
-            headerTitle.innerText = "IT Asset Handover | استمارة عهدة";
-            sigWrapper.style.display = "none";
-        }, 500);
+        setTimeout(() => { window.print(); sigWrapper.style.display = "none"; }, 500);
     }
 
     function switchTab(t) {
         document.getElementById('formSection').style.display = t === 'form' ? 'block' : 'none';
         document.getElementById('dashSection').style.display = t === 'dash' ? 'block' : 'none';
-        if(t === 'dash') loadDashboard();
+        if(t === 'dash') { loadDashboard(); document.getElementById('auditResults').style.display = "none"; }
     }
 
     function loadDashboard() {
@@ -388,13 +377,7 @@
 
     function toggleLang() { lang = lang === 'ar' ? 'en' : 'ar'; localStorage.setItem('uec_lang', lang); applyLang(); }
     function handleLogout() { localStorage.clear(); window.location.reload(); }
-    function resizeCanvas() {
-        [canvas, newCanvas].forEach(c => {
-            const r = Math.max(window.devicePixelRatio || 1, 1);
-            c.width = c.offsetWidth * r; c.height = c.offsetHeight * r;
-            c.getContext("2d").scale(r, r);
-        });
-    }
+    function resizeCanvas() { [canvas, newCanvas].forEach(c => { const r = Math.max(window.devicePixelRatio || 1, 1); c.width = c.offsetWidth * r; c.height = c.offsetHeight * r; c.getContext("2d").scale(r, r); }); }
     window.onresize = resizeCanvas;
     if(localStorage.getItem('uec_user')) showApp();
 </script>
