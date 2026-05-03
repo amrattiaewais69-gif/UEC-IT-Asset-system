@@ -14,7 +14,8 @@
         #loginOverlay { position: fixed; inset: 0; background: linear-gradient(135deg, var(--blue) 0%, #001a33 100%); z-index: 9999; display: flex; align-items: center; justify-content: center; }
         .login-card { background: white; padding: 40px; border-radius: 20px; width: 440px; text-align: center; box-shadow: 0 15px 35px rgba(0,0,0,0.3); border-top: 8px solid var(--gold); }
         .login-card img { max-width: 120px; margin-bottom: 20px; }
-        .login-card input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        /* تعديل محاذاة النص في حقول الدخول لليسار */
+        .login-card input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; text-align: left; direction: ltr; }
         
         /* الهيدر */
         header { background: var(--blue); color: white; padding: 0 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid var(--gold); height: 65px; position: sticky; top: 0; z-index: 100; }
@@ -159,7 +160,7 @@
         </form>
     </div>
 
-    <!-- قسم الإحصائيات مع ترجمة كاملة -->
+    <!-- قسم الإحصائيات -->
     <div id="dashSection" style="display:none;">
         <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:15px; text-align:center; margin-bottom:25px;">
              <div style="background:#fff; padding:20px; border-radius:10px; border-bottom:5px solid var(--blue);"><h3 id="statTotal">إجمالي الأجهزة</h3><p id="totalAssets" style="font-size:2rem; font-weight:bold;">0</p></div>
@@ -248,8 +249,6 @@
         document.getElementById('saveBtn').innerText = d.save;
         document.getElementById('btnPrint').innerText = d.print;
         document.getElementById('lblAssetsTitle').innerText = d.assetsTitle;
-        
-        // ترجمة الإحصائيات
         document.getElementById('statTotal').innerText = d.statTotal;
         document.getElementById('statIssued').innerText = d.statIssued;
         document.getElementById('statStock').innerText = d.statStock;
@@ -261,8 +260,6 @@
         document.getElementById('lblTimelineTitle').innerText = d.timelineTitle;
         document.getElementById('lblIssuedCount').innerText = d.issuedCount;
         document.getElementById('lblReturnedCount').innerText = d.returnedCount;
-        
-        // جداول
         ["thDate","thDat","thT1"].forEach(id => document.getElementById(id).innerText = d.thDate);
         ["thAsset","thDev","thT3"].forEach(id => document.getElementById(id).innerText = d.thAsset);
         document.getElementById("thSelect").innerText = d.thSelect;
