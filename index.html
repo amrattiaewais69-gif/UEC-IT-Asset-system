@@ -315,11 +315,14 @@
     }
 
     function getInventoryList() {
-        fetch(`${SCRIPT_URL}?action=getInventoryList`, { method: 'POST', body: JSON.stringify({}) })
-        .then(res => res.json())
-        .then(data => {
-            // فك التشفير إذا كان النص JSON
-            inventoryData = typeof data === 'string' ? JSON.parse(data) : data;
+    fetch(`${SCRIPT_URL}?action=getInventoryList`, { 
+        method: 'POST', 
+        body: JSON.stringify({ action: 'getInventoryList' }) // تأكد من إرسال الأكشن هنا
+    })
+    .then(res => res.json())
+    .then(data => {
+        // لو الدالة في الباكيند رجعت Array علطول مش محتاج JSON.parse
+        inventoryData = Array.isArray(data) ? data : JSON.parse(data);
             if (inventoryData.status === "error") return console.error(inventoryData.message);
             
             // تحديث قائمة التصنيفات ديناميكياً
