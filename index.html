@@ -90,6 +90,7 @@
 <div class="container" id="mainApp">
     <div class="tabs no-print">
         <button id="formTab" class="tab-btn active" onclick="switchTab('form')">النماذج</button>
+        <button id="inventoryTab" class="tab-btn" onclick="switchTab('inventory')" style="display:none;">المخزن</button>
         <button id="dashTab" class="tab-btn" onclick="switchTab('dash')" style="display:none;">الإحصائيات</button>
     </div>
 
@@ -167,6 +168,39 @@
         </form>
     </div>
 
+    <!-- Inventory Management Section -->
+    <div id="inventorySection" style="display:none;">
+        <div class="search-area no-print">
+            <h3 style="margin:0; color:var(--blue);">إدارة المخزن</h3>
+        </div>
+        <form id="stockForm" style="background:#fff; padding:20px; border-radius:12px; border:1px solid #ddd;">
+            <div class="grid">
+                <div>
+                    <label>الكاتوجري (Category)</label>
+                    <input type="text" id="stkCategory" placeholder="مثلاً: IT, Cleaning, Stationery" required list="catOptions">
+                    <datalist id="catOptions"></datalist>
+                </div>
+                <div>
+                    <label>اسم الصنف (Item Name)</label>
+                    <input type="text" id="stkItemName" placeholder="اسم الجهاز أو الصنف" required list="itemOptions">
+                    <datalist id="itemOptions"></datalist>
+                </div>
+                <div>
+                    <label>الكمية الحالية</label>
+                    <input type="number" id="stkQty" placeholder="0" required min="0">
+                </div>
+                <div>
+                    <label>هل الصنف مستهلك؟ (Consumable)</label>
+                    <select id="stkConsumable">
+                        <option value="no">لا (جهاز له S/N)</option>
+                        <option value="yes">نعم (مثل الأقلام/الأوراق)</option>
+                    </select>
+                </div>
+            </div>
+            <button type="button" onclick="saveStock()" class="btn-blue" id="btnSaveStock">تحديث المخزون</button>
+        </form>
+    </div>
+
     <div id="dashSection" style="display:none;">
         <div class="no-print" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:15px; text-align:center; margin-bottom:25px;">
              <div style="background:#fff; padding:20px; border-radius:10px; border-bottom:5px solid var(--blue);"><h3 id="statTotal">إجمالي الأجهزة</h3><p id="totalAssets" style="font-size:2rem; font-weight:bold;">0</p></div>
@@ -205,7 +239,6 @@
                     <table class="asset-table"><thead><tr><th id="thT1">التاريخ</th><th id="thT2">النوع</th><th id="thT3">الجهاز</th><th>S/N</th><th id="thT4">الأدمن</th></tr></thead><tbody id="auditHistoryBody"></tbody></table>
                 </div>
             </div>
-            <!-- مكان عرض التوقيع في السجل المطبوع -->
             <div class="print-only" id="auditPrintSignature" style="display:none; margin-top:30px; text-align:left;">
                 <p style="font-weight:bold; margin-bottom:10px;">توقيع الموظف المعتمد:</p>
                 <img id="auditSignatureImg" style="max-height:100px; border:1px solid #eee; padding:5px;">
@@ -377,7 +410,10 @@
         document.getElementById('loginOverlay').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
         document.getElementById('adminInfo').innerText = "User: " + localStorage.getItem('uec_user');
-        if(localStorage.getItem('uec_isSuper') === 'true') document.getElementById('dashTab').style.display = 'block';
+        if(localStorage.getItem('uec_isSuper') === 'true') {
+            document.getElementById('dashTab').style.display = 'block';
+            document.getElementById('inventoryTab').style.display = 'block';
+        }
         document.getElementById('docDate').valueAsDate = new Date();
         getInventoryList();
         applyLang(); resizeCanvas();
@@ -390,9 +426,34 @@
             inventoryData = Array.isArray(data) ? data : (data.inventory || []); 
             const catSelect = document.getElementById('categoryList');
             const uniqueCats = [...new Set(inventoryData.map(i => i.category))].filter(c => c && c !== "");
+            
+            // تحديث قوائم الاختيار في صفحة المخزن
+            document.getElementById('catOptions').innerHTML = uniqueCats.map(c => `<option value="${c}">`).join('');
+            document.getElementById('itemOptions').innerHTML = inventoryData.map(i => `<option value="${i.itemName}">`).join('');
+
             catSelect.innerHTML = `<option value="">${lang === 'ar' ? 'كل التصنيفات' : 'All Categories'}</option>` + 
                 uniqueCats.map(c => `<option value="${c}">${c}</option>`).join('');
             if(document.querySelectorAll('.items-block').length === 0) addItemRow();
+        });
+    }
+
+    function saveStock() {
+        const payload = {
+            action: 'updateStock',
+            category: document.getElementById('stkCategory').value,
+            itemName: document.getElementById('stkItemName').value,
+            newQty: document.getElementById('stkQty').value,
+            isConsumable: document.getElementById('stkConsumable').value
+        };
+        if(!payload.category || !payload.itemName || !payload.newQty) return alert("يرجى ملء جميع الخانات");
+        const btn = document.getElementById('btnSaveStock');
+        btn.disabled = true; btn.innerText = "...جارِ الحفظ";
+        fetch(`${SCRIPT_URL}`, { method: 'POST', body: JSON.stringify(payload) })
+        .then(res => res.text()).then(() => {
+            alert("تم تحديث بيانات الصنف بنجاح!");
+            document.getElementById('stockForm').reset();
+            getInventoryList();
+            btn.disabled = false; btn.innerText = "تحديث المخزون";
         });
     }
 
@@ -523,8 +584,13 @@
 
     function switchTab(t) {
         document.getElementById('formSection').style.display = t === 'form' ? 'block' : 'none';
+        document.getElementById('inventorySection').style.display = t === 'inventory' ? 'block' : 'none';
         document.getElementById('dashSection').style.display = t === 'dash' ? 'block' : 'none';
-        if(t === 'dash') loadDashboard();
+        
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        if(t === 'form') document.getElementById('formTab').classList.add('active');
+        if(t === 'inventory') document.getElementById('inventoryTab').classList.add('active');
+        if(t === 'dash') { document.getElementById('dashTab').classList.add('active'); loadDashboard(); }
     }
 
     function loadDashboard() {
