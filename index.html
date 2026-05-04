@@ -14,6 +14,7 @@
         #loginOverlay { position: fixed; inset: 0; background: linear-gradient(135deg, var(--blue) 0%, #001a33 100%); z-index: 9999; display: flex; align-items: center; justify-content: center; }
         .login-card { background: white; padding: 40px; border-radius: 20px; width: 440px; text-align: center; box-shadow: 0 15px 35px rgba(0,0,0,0.3); border-top: 8px solid var(--gold); }
         .login-card img { max-width: 120px; margin-bottom: 20px; }
+        /* تعديل محاذاة النص في حقول الدخول لليسار */
         .login-card input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; text-align: left; direction: ltr; }
         
         /* الهيدر */
@@ -88,6 +89,8 @@
 <div class="container" id="mainApp">
     <div class="tabs no-print">
         <button id="formTab" class="tab-btn active" onclick="switchTab('form')">النماذج</button>
+        <!-- إضافة زر المخازن -->
+        <button id="invTab" class="tab-btn" onclick="switchTab('inv')" style="display:none;">المخازن</button>
         <button id="dashTab" class="tab-btn" onclick="switchTab('dash')" style="display:none;">الإحصائيات</button>
     </div>
 
@@ -159,6 +162,31 @@
         </form>
     </div>
 
+    <!-- قسم المخازن الجديد (إضافة فقط) -->
+    <div id="invSection" style="display:none;">
+        <h4 style="color:var(--blue); border-bottom:2px solid var(--gold); padding-bottom:5px;">📦 إدارة المخزون والمستهلكات</h4>
+        <div class="search-area no-print" style="flex-wrap: wrap;">
+            <div class="grid" style="width:100%; grid-template-columns: 1fr 1fr 1fr 1fr;">
+                <input type="text" id="invCat" placeholder="القسم (IT/Cleaning...)">
+                <input type="text" id="invItem" placeholder="اسم الصنف">
+                <input type="number" id="invQty" placeholder="الكمية الواردة">
+                <select id="invConsumable">
+                    <option value="No">أصل (جهاز)</option>
+                    <option value="Yes">مستهلك (أدوات)</option>
+                </select>
+            </div>
+            <button onclick="addInventoryItem()" class="btn-blue" style="width:100%">إضافة للمخزن</button>
+        </div>
+        <div style="overflow-x:auto; margin-top:15px;">
+            <table class="asset-table">
+                <thead>
+                    <tr><th>القسم</th><th>الصنف</th><th>إجمالي الوارد</th><th style="color:red">المتاح حالياً</th><th>النوع</th><th>الحالة</th></tr>
+                </thead>
+                <tbody id="invTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
     <!-- قسم الإحصائيات -->
     <div id="dashSection" style="display:none;">
         <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:15px; text-align:center; margin-bottom:25px;">
@@ -172,6 +200,11 @@
             <div style="display:flex; gap:10px;">
                 <input type="text" id="dashSearchID" placeholder="أدخل ID الموظف هنا..." style="margin-bottom:0;">
                 <button onclick="auditEmployee()" class="btn-gold" id="btnAudit" style="width:150px;">بحث شامل</button>
+            </div>
+            <!-- أزرار التصدير تحت البحث كما طلبت -->
+            <div style="margin-top:15px; display:flex; gap:10px;">
+                <button onclick="exportData('all')" class="btn-blue" style="background:#28a745;">تصدير العهد النشطة (Excel)</button>
+                <button onclick="exportData('inv')" class="btn-blue" style="background:#6c757d;">تصدير جرد المخزن (Excel)</button>
             </div>
         </div>
 
@@ -285,10 +318,33 @@
         document.getElementById('loginOverlay').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
         document.getElementById('adminInfo').innerText = "User: " + localStorage.getItem('uec_user');
-        if(localStorage.getItem('uec_isSuper') === 'true') document.getElementById('dashTab').style.display = 'block';
+        if(localStorage.getItem('uec_isSuper') === 'true') {
+            document.getElementById('dashTab').style.display = 'block';
+            document.getElementById('invTab').style.display = 'block';
+        }
         const devs = JSON.parse(localStorage.getItem('uec_devices') || '[]');
         document.getElementById('assetList').innerHTML = devs.map(d => `<option value="${d}">${d}</option>`).join('');
         applyLang(); resizeCanvas();
+    }
+
+    // إضافة وظائف المخازن (إضافة فقط)
+    function loadInventory() {
+        fetch(`${SCRIPT_URL}?action=getInventory`)
+        .then(res => res.json()).then(data => {
+            const tbody = document.getElementById('invTableBody');
+            tbody.innerHTML = data.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[3]}</td><td style="color:red; font-weight:bold">${r[6]}</td><td>${r[7] === 'Yes' ? 'مستهلك' : 'أصل'}</td><td>${r[4]}</td></tr>`).join('');
+        });
+    }
+
+    function addInventoryItem() {
+        const payload = {
+            category: document.getElementById('invCat').value,
+            itemName: document.getElementById('invItem').value,
+            quantity: document.getElementById('invQty').value,
+            consumable: document.getElementById('invConsumable').value
+        };
+        fetch(`${SCRIPT_URL}?action=addInventoryItem`, { method: 'POST', body: JSON.stringify(payload) })
+        .then(() => { alert(lang === 'ar' ? "تمت الإضافة للمخزن" : "Added to stock"); loadInventory(); });
     }
 
     function searchEmployee() {
@@ -396,7 +452,12 @@
     function switchTab(t) {
         document.getElementById('formSection').style.display = t === 'form' ? 'block' : 'none';
         document.getElementById('dashSection').style.display = t === 'dash' ? 'block' : 'none';
-        if(t === 'dash') { loadDashboard(); document.getElementById('auditResults').style.display = "none"; }
+        document.getElementById('invSection').style.display = t === 'inv' ? 'block' : 'none';
+        
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        if(t === 'form') document.getElementById('formTab').classList.add('active');
+        if(t === 'inv') { document.getElementById('invTab').classList.add('active'); loadInventory(); }
+        if(t === 'dash') { document.getElementById('dashTab').classList.add('active'); loadDashboard(); document.getElementById('auditResults').style.display = "none"; }
     }
 
     function loadDashboard() {
@@ -410,7 +471,7 @@
 
     function toggleLang() { lang = lang === 'ar' ? 'en' : 'ar'; localStorage.setItem('uec_lang', lang); applyLang(); }
     function handleLogout() { localStorage.clear(); window.location.reload(); }
-    function resizeCanvas() { [canvas, newCanvas].forEach(c => { const r = Math.max(window.devicePixelRatio || 1, 1); c.width = c.offsetWidth * r; c.height = c.offsetHeight * r; c.getContext("2d").scale(r, r); }); }
+    function resizeCanvas() { [canvas, newCanvas].forEach(c => { const r = Math.max(window.devicePixelRatio || 1, 1); if(c) { c.width = c.offsetWidth * r; c.height = c.offsetHeight * r; c.getContext("2d").scale(r, r); } }); }
     window.onresize = resizeCanvas;
     if(localStorage.getItem('uec_user')) showApp();
 </script>
