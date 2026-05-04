@@ -171,29 +171,30 @@
     <!-- Inventory Management Section -->
     <div id="inventorySection" style="display:none;">
         <div class="search-area no-print">
-            <h3 style="margin:0; color:var(--blue);">إدارة المخزن</h3>
+            <h3 id="lblInventoryTitle" style="margin:0; color:var(--blue);">إدارة المخزن</h3>
+            <button type="button" onclick="document.getElementById('stockForm').reset();" class="btn-blue" style="background:#5bc0de; width: 100px;">New</button>
         </div>
         <form id="stockForm" style="background:#fff; padding:20px; border-radius:12px; border:1px solid #ddd;">
             <div class="grid">
                 <div>
-                    <label>الكاتوجري (Category)</label>
-                    <input type="text" id="stkCategory" placeholder="مثلاً: IT, Cleaning, Stationery" required list="catOptions">
+                    <label id="lblStkCat">الكاتوجري (Category)</label>
+                    <input type="text" id="stkCategory" placeholder="IT, Cleaning, Stationery" required list="catOptions">
                     <datalist id="catOptions"></datalist>
                 </div>
                 <div>
-                    <label>اسم الصنف (Item Name)</label>
-                    <input type="text" id="stkItemName" placeholder="اسم الجهاز أو الصنف" required list="itemOptions">
+                    <label id="lblStkItem">اسم الصنف (Item Name)</label>
+                    <input type="text" id="stkItemName" placeholder="Item name" required list="itemOptions">
                     <datalist id="itemOptions"></datalist>
                 </div>
                 <div>
-                    <label>الكمية الحالية</label>
+                    <label id="lblStkQty">الكمية الحالية</label>
                     <input type="number" id="stkQty" placeholder="0" required min="0">
                 </div>
                 <div>
-                    <label>هل الصنف مستهلك؟ (Consumable)</label>
+                    <label id="lblStkCons">هل الصنف مستهلك؟ (Consumable)</label>
                     <select id="stkConsumable">
-                        <option value="no">لا (جهاز له S/N)</option>
-                        <option value="yes">نعم (مثل الأقلام/الأوراق)</option>
+                        <option value="no" id="optNo">لا (جهاز له S/N)</option>
+                        <option value="yes" id="optYes">نعم (مثل الأقلام/الأوراق)</option>
                     </select>
                 </div>
             </div>
@@ -261,7 +262,7 @@
 
     const translations = {
         ar: { 
-            formTab: "النماذج", dashTab: "الإحصائيات", searchPlace: "رقم الموظف للبحث...", btnSearch: "بحث", 
+            formTab: "النماذج", inventoryTab: "المخزن", dashTab: "الإحصائيات", searchPlace: "رقم الموظف للبحث...", btnSearch: "بحث", 
             trans: "نوع العملية", id: "الرقم الوظيفي", name: "اسم الموظف", type: "الجهاز / الصنف", sn: "S/N", specs: "المواصفات", 
             sign: "التوقيع:", save: "حفظ البيانات", print: "طباعة", langBtn: "English", assetsTitle: "العهدة الحالية",
             statTotal: "إجمالي الأجهزة", statIssued: "خارج (عهدة)", statStock: "داخل (مخزن)",
@@ -269,10 +270,13 @@
             activeAssets: "📋 العهدة الحالية النشطة", summaryTitle: "📊 ملخص النشاط", timelineTitle: "🕒 السجل الزمني الكامل",
             issuedCount: "عمليات الاستلام:", returnedCount: "عمليات الإرجاع:",
             thDate: "التاريخ", thAsset: "الجهاز", thSelect: "اختيار", thAdmin: "الأدمن", thType: "النوع",
-            stockText: "الرصيد المتاح:", category: "التصنيف", qty: "الكمية"
+            stockText: "الرصيد المتاح:", category: "التصنيف", qty: "الكمية",
+            invTitle: "إدارة المخزن", stkCat: "الكاتوجري (Category)", stkItem: "اسم الصنف (Item Name)", 
+            stkQty: "الكمية الحالية", stkCons: "هل الصنف مستهلك؟ (Consumable)", optNo: "لا (جهاز له S/N)", 
+            optYes: "نعم (مثل الأقلام/الأوراق)", btnStkSave: "تحديث المخزون"
         },
         en: { 
-            formTab: "Forms", dashTab: "Statistics", searchPlace: "Employee ID to search...", btnSearch: "Search", 
+            formTab: "Forms", inventoryTab: "Stock", dashTab: "Statistics", searchPlace: "Employee ID to search...", btnSearch: "Search", 
             trans: "Process Type", id: "Employee ID", name: "Employee Name", type: "Asset/Item Type", sn: "S/N", specs: "Specifications", 
             sign: "Signature:", save: "Save Data", print: "Print", langBtn: "العربية", assetsTitle: "Current Assets",
             statTotal: "Total Assets", statIssued: "Issued (Out)", statStock: "In Stock",
@@ -280,7 +284,10 @@
             activeAssets: "📋 Current Active Assets", summaryTitle: "📊 Activity Summary", timelineTitle: "🕒 Full Timeline History",
             issuedCount: "Total Issued:", returnedCount: "Total Returned:",
             thDate: "Date", thAsset: "Asset", thSelect: "Select", thAdmin: "Admin", thType: "Type",
-            stockText: "Current Stock:", category: "Category", qty: "Quantity"
+            stockText: "Current Stock:", category: "Category", qty: "Quantity",
+            invTitle: "Inventory Management", stkCat: "Category", stkItem: "Item Name", 
+            stkQty: "Current Quantity", stkCons: "Consumable?", optNo: "No (Device with S/N)", 
+            optYes: "Yes (e.g. Pens/Paper)", btnStkSave: "Update Stock"
         }
     };
 
@@ -289,6 +296,7 @@
         document.getElementById('mainHtml').dir = lang === 'ar' ? 'rtl' : 'ltr';
         document.getElementById('langBtn').innerText = d.langBtn;
         document.getElementById('formTab').innerText = d.formTab;
+        document.getElementById('inventoryTab').innerText = d.inventoryTab;
         document.getElementById('dashTab').innerText = d.dashTab;
         document.getElementById('searchID').placeholder = d.searchPlace;
         document.getElementById('btnSearch').innerText = d.btnSearch;
@@ -311,11 +319,29 @@
         document.getElementById('lblIssuedCount').innerText = d.issuedCount;
         document.getElementById('lblReturnedCount').innerText = d.returnedCount;
         document.getElementById('lblCategory').innerText = d.category;
+        
+        // Inventory Tab Translations
+        document.getElementById('lblInventoryTitle').innerText = d.invTitle;
+        document.getElementById('lblStkCat').innerText = d.stkCat;
+        document.getElementById('lblStkItem').innerText = d.stkItem;
+        document.getElementById('lblStkQty').innerText = d.stkQty;
+        document.getElementById('lblStkCons').innerText = d.stkCons;
+        document.getElementById('optNo').innerText = d.optNo;
+        document.getElementById('optYes').innerText = d.optYes;
+        document.getElementById('btnSaveStock').innerText = d.btnStkSave;
+
         ["thDate","thDat","thT1"].forEach(id => document.getElementById(id).innerText = d.thDate);
         ["thAsset","thDev","thT3"].forEach(id => document.getElementById(id).innerText = d.thAsset);
         document.getElementById("thSelect").innerText = d.thSelect;
         document.getElementById("thT2").innerText = d.thType;
         document.getElementById("thT4").innerText = d.thAdmin;
+        
+        // Update items labels dynamically
+        document.querySelectorAll('.lblItemType').forEach(el => el.innerText = d.type);
+        document.querySelectorAll('.lblItemSN').forEach(el => el.innerText = d.sn);
+        document.querySelectorAll('.lblItemQty').forEach(el => el.innerText = d.qty);
+        document.querySelectorAll('.lblItemSpecs').forEach(el => el.innerText = d.specs);
+        document.querySelectorAll('.lblStockText').forEach(el => el.innerText = d.stockText);
     }
 
     function addItemRow(assetVal = "", snVal = "", specsVal = "") {
@@ -427,7 +453,6 @@
             const catSelect = document.getElementById('categoryList');
             const uniqueCats = [...new Set(inventoryData.map(i => i.category))].filter(c => c && c !== "");
             
-            // تحديث قوائم الاختيار في صفحة المخزن
             document.getElementById('catOptions').innerHTML = uniqueCats.map(c => `<option value="${c}">`).join('');
             document.getElementById('itemOptions').innerHTML = inventoryData.map(i => `<option value="${i.itemName}">`).join('');
 
@@ -447,13 +472,13 @@
         };
         if(!payload.category || !payload.itemName || !payload.newQty) return alert("يرجى ملء جميع الخانات");
         const btn = document.getElementById('btnSaveStock');
-        btn.disabled = true; btn.innerText = "...جارِ الحفظ";
+        btn.disabled = true; btn.innerText = "...";
         fetch(`${SCRIPT_URL}`, { method: 'POST', body: JSON.stringify(payload) })
         .then(res => res.text()).then(() => {
-            alert("تم تحديث بيانات الصنف بنجاح!");
+            alert(lang === 'ar' ? "تم التحديث!" : "Stock Updated!");
             document.getElementById('stockForm').reset();
             getInventoryList();
-            btn.disabled = false; btn.innerText = "تحديث المخزون";
+            btn.disabled = false; btn.innerText = translations[lang].btnStkSave;
         });
     }
 
