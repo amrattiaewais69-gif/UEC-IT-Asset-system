@@ -178,17 +178,18 @@
             <div class="grid">
                 <div>
                     <label id="lblStkCat">الكاتوجري (Category)</label>
-                    <input type="text" id="stkCategory" placeholder="IT, Cleaning, Stationery" required list="catOptions">
+                    <input type="text" id="stkCategory" placeholder="IT, Cleaning, Stationery" required list="catOptions" oninput="filterInventoryItems()">
                     <datalist id="catOptions"></datalist>
                 </div>
                 <div>
                     <label id="lblStkItem">اسم الصنف (Item Name)</label>
-                    <input type="text" id="stkItemName" placeholder="Item name" required list="itemOptions">
+                    <input type="text" id="stkItemName" placeholder="Item name" required list="itemOptions" onchange="checkExistingStock()">
                     <datalist id="itemOptions"></datalist>
                 </div>
                 <div>
-                    <label id="lblStkQty">الكمية الحالية</label>
-                    <input type="number" id="stkQty" placeholder="0" required min="0">
+                    <label id="lblStkQty">الكمية الجديدة (لإضافتها للرصيد)</label>
+                    <input type="number" id="stkQty" placeholder="0" required min="1">
+                    <div id="currentStockDisplay" style="font-size: 0.75rem; color: var(--blue); margin-top: 5px; font-weight: bold;"></div>
                 </div>
                 <div>
                     <label id="lblStkCons">هل الصنف مستهلك؟ (Consumable)</label>
@@ -272,7 +273,7 @@
             thDate: "التاريخ", thAsset: "الجهاز", thSelect: "اختيار", thAdmin: "الأدمن", thType: "النوع",
             stockText: "الرصيد المتاح:", category: "التصنيف", qty: "الكمية",
             invTitle: "إدارة المخزن", stkCat: "الكاتوجري (Category)", stkItem: "اسم الصنف (Item Name)", 
-            stkQty: "الكمية الحالية", stkCons: "هل الصنف مستهلك؟ (Consumable)", optNo: "لا (جهاز له S/N)", 
+            stkQty: "الكمية المضافة", stkCons: "هل الصنف مستهلك؟ (Consumable)", optNo: "لا (جهاز له S/N)", 
             optYes: "نعم (مثل الأقلام/الأوراق)", btnStkSave: "تحديث المخزون"
         },
         en: { 
@@ -286,7 +287,7 @@
             thDate: "Date", thAsset: "Asset", thSelect: "Select", thAdmin: "Admin", thType: "Type",
             stockText: "Current Stock:", category: "Category", qty: "Quantity",
             invTitle: "Inventory Management", stkCat: "Category", stkItem: "Item Name", 
-            stkQty: "Current Quantity", stkCons: "Consumable?", optNo: "No (Device with S/N)", 
+            stkQty: "Quantity to Add", stkCons: "Consumable?", optNo: "No (Device with S/N)", 
             optYes: "Yes (e.g. Pens/Paper)", btnStkSave: "Update Stock"
         }
     };
@@ -454,7 +455,9 @@
             const uniqueCats = [...new Set(inventoryData.map(i => i.category))].filter(c => c && c !== "");
             
             document.getElementById('catOptions').innerHTML = uniqueCats.map(c => `<option value="${c}">`).join('');
-            document.getElementById('itemOptions').innerHTML = inventoryData.map(i => `<option value="${i.itemName}">`).join('');
+            
+            // تهيئة أولية لـ itemOptions في صفحة المخزن بكل الأصناف
+            filterInventoryItems();
 
             catSelect.innerHTML = `<option value="">${lang === 'ar' ? 'كل التصنيفات' : 'All Categories'}</option>` + 
                 uniqueCats.map(c => `<option value="${c}">${c}</option>`).join('');
@@ -462,21 +465,51 @@
         });
     }
 
+    function filterInventoryItems() {
+        const cat = document.getElementById('stkCategory').value;
+        const itemOptions = document.getElementById('itemOptions');
+        const filtered = !cat ? inventoryData : inventoryData.filter(i => i.category === cat);
+        itemOptions.innerHTML = filtered.map(i => `<option value="${i.itemName}">`).join('');
+    }
+
+    function checkExistingStock() {
+        const itemName = document.getElementById('stkItemName').value;
+        const display = document.getElementById('currentStockDisplay');
+        const item = inventoryData.find(i => i.itemName === itemName);
+        if(item) {
+            display.innerText = (lang === 'ar' ? "الرصيد الحالي بالمخزن: " : "Current Stock: ") + item.quantity;
+            document.getElementById('stkCategory').value = item.category;
+            document.getElementById('stkConsumable').value = item.isConsumable;
+        } else {
+            display.innerText = "";
+        }
+    }
+
     function saveStock() {
+        const itemName = document.getElementById('stkItemName').value;
+        const addQty = parseInt(document.getElementById('stkQty').value) || 0;
+        const existingItem = inventoryData.find(i => i.itemName === itemName);
+        
+        // حساب الإجمالي الجديد: الرصيد القديم + المضاف
+        const totalQty = existingItem ? (parseInt(existingItem.quantity) + addQty) : addQty;
+
         const payload = {
             action: 'updateStock',
             category: document.getElementById('stkCategory').value,
-            itemName: document.getElementById('stkItemName').value,
-            newQty: document.getElementById('stkQty').value,
+            itemName: itemName,
+            newQty: totalQty, // إرسال الإجمالي النهائي
             isConsumable: document.getElementById('stkConsumable').value
         };
-        if(!payload.category || !payload.itemName || !payload.newQty) return alert("يرجى ملء جميع الخانات");
+
+        if(!payload.category || !payload.itemName || addQty <= 0) return alert(lang === 'ar' ? "يرجى ملء جميع الخانات بشكل صحيح" : "Please fill all fields correctly");
+        
         const btn = document.getElementById('btnSaveStock');
         btn.disabled = true; btn.innerText = "...";
         fetch(`${SCRIPT_URL}`, { method: 'POST', body: JSON.stringify(payload) })
         .then(res => res.text()).then(() => {
-            alert(lang === 'ar' ? "تم التحديث!" : "Stock Updated!");
+            alert(lang === 'ar' ? "تم تحديث المخزون بنجاح!" : "Stock Updated Successfully!");
             document.getElementById('stockForm').reset();
+            document.getElementById('currentStockDisplay').innerText = "";
             getInventoryList();
             btn.disabled = false; btn.innerText = translations[lang].btnStkSave;
         });
