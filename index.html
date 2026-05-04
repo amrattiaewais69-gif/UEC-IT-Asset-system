@@ -314,35 +314,32 @@
         applyLang(); resizeCanvas();
     }
 
-   function getInventoryList() {
-    fetch(`${SCRIPT_URL}`, { 
-        method: 'POST', 
-        // لازم الـ action تتبعت جوه الـ JSON body
-        body: JSON.stringify({ action: 'getInventoryList' }) 
-    })
-    .then(res => res.json())
-    .then(data => {
-        inventoryData = data; 
-        if (inventoryData.status === "error") return;
+    function getInventoryList() {
+        fetch(`${SCRIPT_URL}`, { 
+            method: 'POST', 
+            body: JSON.stringify({ action: 'getInventoryList' }) 
+        })
+        .then(res => res.json())
+        .then(data => {
+            inventoryData = Array.isArray(data) ? data : (data.inventory || []); 
+            if (data.status === "error") return console.error(data.message);
 
-        const catSelect = document.getElementById('categoryList');
-        // استخراج التصنيفات الفريدة وتصفية الفراغات
-        const uniqueCats = [...new Set(inventoryData.map(i => i.category))].filter(c => c && c !== "");
-        
-        catSelect.innerHTML = `<option value="">كل التصنيفات</option>` + 
-            uniqueCats.map(c => `<option value="${c}">${c}</option>`).join('');
+            const catSelect = document.getElementById('categoryList');
+            const uniqueCats = [...new Set(inventoryData.map(i => i.category))].filter(c => c && c !== "");
+            
+            catSelect.innerHTML = `<option value="">${translations[lang].category === 'التصنيف' ? 'كل التصنيفات' : 'All Categories'}</option>` + 
+                uniqueCats.map(c => `<option value="${c}">${c}</option>`).join('');
 
-        populateAssetSelect(inventoryData);
-    });
-}
+            populateAssetSelect(inventoryData);
         })
         .catch(err => console.error("Fetch Error:", err));
     }
 
     function populateAssetSelect(items) {
         const select = document.getElementById('assetList');
-        select.innerHTML = `<option value="">${lang === 'ar' ? 'اختر الصنف...' : 'Select Item...'}</option>` + items.map(item => 
-            `<option value="${item.itemName}">${item.itemName}</option>`
+        select.innerHTML = `<option value="">${lang === 'ar' ? 'اختر الصنف...' : 'Select Item...'}</option>` + 
+        items.map(item => 
+            `<option value="${item.itemName}" data-consumable="${item.isConsumable}">${item.itemName}</option>`
         ).join('');
     }
 
@@ -354,10 +351,29 @@
     }
 
     function updateStockDisplay() {
-        const selected = document.getElementById('assetList').value;
+        const assetSelect = document.getElementById('assetList');
+        const selected = assetSelect.value;
         const container = document.getElementById('stockContainer');
         const stockSpan = document.getElementById('currentStock');
-        if(!selected) { container.style.visibility = "hidden"; return; }
+        const snInput = document.getElementById('sn');
+
+        if(!selected) { 
+            container.style.visibility = "hidden"; 
+            snInput.required = true;
+            return; 
+        }
+
+        const selectedOption = assetSelect.options[assetSelect.selectedIndex];
+        const isConsumable = selectedOption.getAttribute('data-consumable') === 'yes';
+
+        if (isConsumable) {
+            snInput.required = false;
+            snInput.placeholder = lang === 'ar' ? "اختياري للمستهلكات" : "Optional for consumables";
+        } else {
+            snInput.required = true;
+            snInput.placeholder = "S/N";
+        }
+
         const item = inventoryData.find(i => i.itemName === selected);
         if(item) {
             container.style.visibility = "visible";
