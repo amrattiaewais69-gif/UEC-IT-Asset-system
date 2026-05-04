@@ -286,15 +286,21 @@
         if(localStorage.getItem('uec_isSuper') === 'true') document.getElementById('dashTab').style.display = 'block';
         
         // التعديل: جلب قائمة الأجهزة من شيت Inventory
-        fetch(`${SCRIPT_URL}?action=getInventoryList`)
-        .then(res => res.json())
-        .then(items => {
-            const select = document.getElementById('assetList');
-            select.innerHTML = items.map(item => 
-                `<option value="${item.itemName}">${item.itemName} (${item.category}) - المتاح: ${item.quantity}</option>`
-            ).join('');
-        });
-
+        // استبدل السطر القديم بهذا السطر (تغيير الطريقة لـ POST لضمان التوافق مع doPost)
+fetch(`${SCRIPT_URL}?action=getInventoryList`, { method: 'POST', body: JSON.stringify({}) })
+.then(res => res.json())
+.then(items => {
+    if (items.status === "error") {
+        console.error("Inventory Error:", items.message);
+        return;
+    }
+    const select = document.getElementById('assetList');
+    select.innerHTML = items.map(item => 
+        `<option value="${item.itemName}">${item.itemName} (${item.category}) - المتاح: ${item.quantity}</option>`
+    ).join('');
+})
+.catch(err => console.error("Fetch Error:", err));
+        
         applyLang(); resizeCanvas();
     }
 
