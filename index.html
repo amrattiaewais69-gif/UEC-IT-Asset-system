@@ -197,7 +197,6 @@
                 <input type="text" id="dashSearchID" placeholder="أدخل ID الموظف هنا..." style="margin-bottom:0;">
                 <button onclick="auditEmployee()" class="btn-gold" id="btnAudit" style="width:150px;">بحث شامل</button>
             </div>
-            <!-- أزرار التصدير تحت البحث -->
             <div style="margin-top:15px; display:flex; gap:10px;">
                 <button onclick="exportData('active')" class="btn-blue" style="background:#28a745;">تصدير العهد النشطة (Excel)</button>
                 <button onclick="exportData('inventory')" class="btn-blue" style="background:#6c757d;">تصدير جرد المخزن (Excel)</button>
@@ -227,16 +226,14 @@
 </div>
 
 <script>
+    // --- متغيرات عامة ---
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz-r35RwmB06Ydm2EkXF5P2yMpXu-d4QeeseN5QJ9UpKGNWsqQB3P27OvVT-ZjcYRtC/exec"; 
-    const canvas = document.getElementById('signature-pad');
-    const signaturePad = new SignaturePad(canvas);
-    const newCanvas = document.getElementById('new-signature-pad');
-    const newSignaturePad = new SignaturePad(newCanvas);
-    
+    let signaturePad, newSignaturePad;
     let lang = localStorage.getItem('uec_lang') || 'ar';
     let loadedSignature = "";
     let currentUserData = null;
 
+    // --- الترجمة ---
     const translations = {
         ar: { 
             formTab: "النماذج", dashTab: "الإحصائيات", searchPlace: "رقم الموظف للبحث...", btnSearch: "بحث", 
@@ -260,6 +257,7 @@
         }
     };
 
+    // --- الدوال الأساسية ---
     function applyLang() {
         const d = translations[lang];
         document.getElementById('mainHtml').dir = lang === 'ar' ? 'rtl' : 'ltr';
@@ -289,30 +287,29 @@
         document.getElementById('lblTimelineTitle').innerText = d.timelineTitle;
         document.getElementById('lblIssuedCount').innerText = d.issuedCount;
         document.getElementById('lblReturnedCount').innerText = d.returnedCount;
-        ["thDate","thDat","thT1"].forEach(id => document.getElementById(id).innerText = d.thDate);
-        ["thAsset","thDev","thT3"].forEach(id => document.getElementById(id).innerText = d.thAsset);
-        document.getElementById("thSelect").innerText = d.thSelect;
-        document.getElementById("thT2").innerText = d.thType;
-        document.getElementById("thT4").innerText = d.thAdmin;
+        ["thDate","thDat","thT1"].forEach(id => { if(document.getElementById(id)) document.getElementById(id).innerText = d.thDate; });
+        ["thAsset","thDev","thT3"].forEach(id => { if(document.getElementById(id)) document.getElementById(id).innerText = d.thAsset; });
+        if(document.getElementById("thSelect")) document.getElementById("thSelect").innerText = d.thSelect;
+        if(document.getElementById("thT2")) document.getElementById("thT2").innerText = d.thType;
+        if(document.getElementById("thT4")) document.getElementById("thT4").innerText = d.thAdmin;
     }
 
     function handleLogin() {
         const user = document.getElementById('userInput').value;
         const pass = document.getElementById('passInput').value;
-        const loginBtn = document.getElementById('loginBtn');
+        const btn = document.getElementById('loginBtn');
         if(!user || !pass) return;
-        loginBtn.innerText = "Checking...";
-        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({action: "login", user, pass}) })
+        btn.innerText = "Checking...";
+        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({action: "login", user: user, pass: pass}) })
         .then(res => res.json()).then(data => {
             if(data.status === "success") {
-                currentUserData = data;
                 localStorage.setItem('uec_session', JSON.stringify(data));
                 showApp();
             } else {
                 alert(data.message);
-                loginBtn.innerText = "Login";
+                btn.innerText = "Login";
             }
-        });
+        }).catch(err => { alert("Error connecting to server"); btn.innerText = "Login"; });
     }
 
     function showApp() {
@@ -323,18 +320,25 @@
         document.getElementById('mainApp').style.display = 'block';
         document.getElementById('adminInfo').innerText = "User: " + session.name;
         
-        // الصلاحيات للتابات
+        // تفعيل الأقسام بناءً على الصلاحية
         if(session.isSuper === true || session.isSuper === "true") {
             document.getElementById('dashTab').style.display = 'block';
             document.getElementById('invTab').style.display = 'block';
         }
 
-        // تعبئة القوائم
+        // تعبئة القوائم المنسدلة
         document.getElementById('assetList').innerHTML = session.devices.map(d => `<option value="${d}">${d}</option>`).join('');
         document.getElementById('invCat').innerHTML = '<option value="">اختر القسم...</option>' + 
             session.categories.map(c => `<option value="${c}">${c}</option>`).join('');
             
-        applyLang(); resizeCanvas();
+        initSignature();
+        applyLang(); 
+        resizeCanvas();
+    }
+
+    function initSignature() {
+        if(!signaturePad) signaturePad = new SignaturePad(document.getElementById('signature-pad'));
+        if(!newSignaturePad) newSignaturePad = new SignaturePad(document.getElementById('new-signature-pad'));
     }
 
     function switchTab(t) {
@@ -345,9 +349,55 @@
         if(t === 'form') document.getElementById('formTab').classList.add('active');
         if(t === 'inv') { document.getElementById('invTab').classList.add('active'); loadInventory(); }
         if(t === 'dash') { document.getElementById('dashTab').classList.add('active'); loadDashboard(); }
+        resizeCanvas();
     }
 
-    // المخازن
+    // --- وظائف البحث والمخازن ---
+    function searchEmployee() {
+        const empID = document.getElementById('searchID').value;
+        if(!empID) return;
+        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({action: "search", empID: empID}) })
+        .then(res => res.json()).then(res => {
+            const tbody = document.getElementById('employeeAssetsBody');
+            tbody.innerHTML = "";
+            if(res.data && res.data.length > 0) {
+                document.getElementById('employeeAssetsWrapper').style.display = "block";
+                const last = res.data[res.data.length - 1];
+                document.getElementById('empID').value = last[3];
+                document.getElementById('empName').value = last[4];
+                if(last[8]) loadedSignature = last[8];
+                
+                let current = {};
+                res.data.forEach(r => {
+                    if(r[2].includes("Issue")) current[r[6]] = r;
+                    else if(r[2].includes("Return")) delete current[r[6]];
+                });
+                Object.values(current).reverse().forEach(r => {
+                    tbody.innerHTML += `<tr><td>${new Date(r[0]).toLocaleDateString()}</td><td>${r[5]}</td><td>${r[6]}</td><td><button type="button" class="btn-gold" onclick="selectAsset('${r[5]}','${r[6]}','${r[7]}')">✓</button></td></tr>`;
+                });
+            } else { alert("لم يتم العثور على موظف أو لا توجد عهدة"); }
+        });
+    }
+
+    function selectAsset(t, s, sp) {
+        document.getElementById('assetList').value = t;
+        document.getElementById('sn').value = s;
+        document.getElementById('specs').value = sp;
+    }
+
+    function auditEmployee() {
+        const empID = document.getElementById('dashSearchID').value;
+        if(!empID) return;
+        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({action: "getEmployeeFullHistory", empID: empID}) })
+        .then(res => res.json()).then(data => {
+            document.getElementById('auditResults').style.display = "block";
+            document.getElementById('auditCurrentBody').innerHTML = data.current.map(r => `<tr><td>${r[5]}</td><td>${r[6]}</td><td>${new Date(r[0]).toLocaleDateString()}</td></tr>`).join('');
+            document.getElementById('auditIssuedCount').innerText = data.stats.issued;
+            document.getElementById('auditReturnedCount').innerText = data.stats.returned;
+            document.getElementById('auditHistoryBody').innerHTML = data.history.map(h => `<tr><td>${new Date(h.date).toLocaleDateString()}</td><td>${h.type}</td><td>${h.asset}</td><td>${h.sn}</td><td>${h.admin}</td></tr>`).join('');
+        });
+    }
+
     function loadInventory() {
         fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({action: "getInventory"}) })
         .then(res => res.json()).then(data => {
@@ -365,92 +415,7 @@
             consumable: document.getElementById('invConsumable').value
         };
         fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) })
-        .then(() => { alert("Saved to stock"); loadInventory(); });
-    }
-
-    function searchEmployee() {
-        const empID = document.getElementById('searchID').value;
-        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({action: "search", empID}) })
-        .then(res => res.json()).then(res => {
-            const tbody = document.getElementById('employeeAssetsBody');
-            tbody.innerHTML = "";
-            if(res.data && res.data.length > 0) {
-                document.getElementById('employeeAssetsWrapper').style.display = "block";
-                const last = res.data[res.data.length - 1];
-                document.getElementById('empID').value = last[3];
-                document.getElementById('empName').value = last[4];
-                if(last[8]) loadedSignature = last[8];
-                
-                let current = {};
-                res.data.forEach(r => {
-                    if(r[2].includes("Issue")) current[r[6]] = r;
-                    else if(r[2].includes("Return")) delete current[r[6]];
-                });
-                Object.values(current).forEach(r => {
-                    tbody.innerHTML += `<tr><td>${new Date(r[0]).toLocaleDateString()}</td><td>${r[5]}</td><td>${r[6]}</td><td><button type="button" class="btn-gold" onclick="selectAsset('${r[5]}','${r[6]}','${r[7]}')">✓</button></td></tr>`;
-                });
-            }
-        });
-    }
-
-    function selectAsset(t, s, sp) {
-        document.getElementById('assetList').value = t;
-        document.getElementById('sn').value = s;
-        document.getElementById('specs').value = sp;
-    }
-
-    function auditEmployee() {
-        const empID = document.getElementById('dashSearchID').value;
-        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({action: "getEmployeeFullHistory", empID}) })
-        .then(res => res.json()).then(data => {
-            document.getElementById('auditResults').style.display = "block";
-            document.getElementById('auditCurrentBody').innerHTML = data.current.map(r => `<tr><td>${r[5]}</td><td>${r[6]}</td><td>${new Date(r[0]).toLocaleDateString()}</td></tr>`).join('');
-            document.getElementById('auditIssuedCount').innerText = data.stats.issued;
-            document.getElementById('auditReturnedCount').innerText = data.stats.returned;
-            document.getElementById('auditHistoryBody').innerHTML = data.history.map(h => `<tr><td>${new Date(h.date).toLocaleDateString()}</td><td>${h.type}</td><td>${h.asset}</td><td>${h.sn}</td><td>${h.admin}</td></tr>`).join('');
-        });
-    }
-
-    // حفظ البيانات
-    document.getElementById('assetForm').onsubmit = function(e) {
-        e.preventDefault();
-        const btn = document.getElementById('saveBtn'); btn.disabled = true;
-        const payload = {
-            action: "save",
-            admin: currentUserData.name,
-            transType: document.getElementById('transType').value,
-            empID: document.getElementById('empID').value,
-            empName: document.getElementById('empName').value,
-            asset: document.getElementById('assetList').value,
-            sn: document.getElementById('sn').value,
-            specs: document.getElementById('specs').value,
-            signature: signaturePad.isEmpty() ? loadedSignature : signaturePad.toDataURL(),
-            newEmpID: document.getElementById('newEmpID').value,
-            newEmpName: document.getElementById('newEmpName').value,
-            newSignature: newSignaturePad.toDataURL()
-        };
-        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) })
-        .then(() => { alert("Saved Successfully!"); resetForm(); btn.disabled = false; });
-    };
-
-    function resetForm() {
-        document.getElementById('assetForm').reset(); signaturePad.clear(); newSignaturePad.clear();
-        document.getElementById('employeeAssetsWrapper').style.display = "none";
-    }
-
-    function checkTransfer() { document.getElementById('transferSection').style.display = document.getElementById('transType').value === 'Transfer' ? 'block' : 'none'; resizeCanvas(); }
-
-    function preparePrint() {
-        const type = document.getElementById('transType').value;
-        const imgA = document.getElementById('printSignatureImgA');
-        const imgB = document.getElementById('printSignatureImgB');
-        document.getElementById('printSignaturesWrapper').style.display = "flex";
-        imgA.src = signaturePad.isEmpty() ? loadedSignature : signaturePad.toDataURL();
-        if(type === 'Transfer') {
-            document.getElementById('wrapperSignB').style.display = "block";
-            imgB.src = newSignaturePad.toDataURL();
-        }
-        setTimeout(() => { window.print(); }, 500);
+        .then(() => { alert("Saved"); loadInventory(); });
     }
 
     function loadDashboard() {
@@ -466,11 +431,67 @@
         window.open(`${SCRIPT_URL}?action=export&type=${type}`, '_blank');
     }
 
+    // --- حفظ ونظام الاستمارة ---
+    document.getElementById('assetForm').onsubmit = function(e) {
+        e.preventDefault();
+        const btn = document.getElementById('saveBtn'); 
+        if(signaturePad.isEmpty() && !loadedSignature) return alert("Signature is required!");
+        btn.disabled = true; btn.innerText = "Saving...";
+        const payload = {
+            action: "save",
+            admin: currentUserData.name,
+            transType: document.getElementById('transType').value,
+            empID: document.getElementById('empID').value,
+            empName: document.getElementById('empName').value,
+            asset: document.getElementById('assetList').value,
+            sn: document.getElementById('sn').value,
+            specs: document.getElementById('specs').value,
+            signature: signaturePad.isEmpty() ? loadedSignature : signaturePad.toDataURL(),
+            newEmpID: document.getElementById('newEmpID').value,
+            newEmpName: document.getElementById('newEmpName').value,
+            newSignature: newSignaturePad.toDataURL()
+        };
+        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) })
+        .then(res => res.text()).then(() => { alert("Saved!"); resetForm(); btn.disabled = false; btn.innerText = translations[lang].save; });
+    };
+
+    function resetForm() {
+        document.getElementById('assetForm').reset(); 
+        if(signaturePad) signaturePad.clear(); 
+        if(newSignaturePad) newSignaturePad.clear();
+        document.getElementById('employeeAssetsWrapper').style.display = "none";
+        loadedSignature = "";
+    }
+
+    function checkTransfer() { 
+        document.getElementById('transferSection').style.display = document.getElementById('transType').value === 'Transfer' ? 'block' : 'none'; 
+        resizeCanvas(); 
+    }
+
+    function preparePrint() {
+        const type = document.getElementById('transType').value;
+        const sigA = document.getElementById('printSignatureImgA');
+        const sigB = document.getElementById('printSignatureImgB');
+        document.getElementById('printSignaturesWrapper').style.display = "flex";
+        sigA.src = signaturePad.isEmpty() ? loadedSignature : signaturePad.toDataURL();
+        if(type === 'Transfer') {
+            document.getElementById('wrapperSignB').style.display = "block";
+            sigB.src = newSignaturePad.toDataURL();
+        }
+        setTimeout(() => { window.print(); }, 500);
+    }
+
     function toggleLang() { lang = lang === 'ar' ? 'en' : 'ar'; localStorage.setItem('uec_lang', lang); applyLang(); }
     function handleLogout() { localStorage.clear(); location.reload(); }
-    function resizeCanvas() { [canvas, newCanvas].forEach(c => { if(c) { const r = Math.max(window.devicePixelRatio || 1, 1); c.width = c.offsetWidth * r; c.height = c.offsetHeight * r; c.getContext("2d").scale(r, r); } }); }
+    function resizeCanvas() { 
+        [document.getElementById('signature-pad'), document.getElementById('new-signature-pad')].forEach(c => { 
+            if(c) { const r = Math.max(window.devicePixelRatio || 1, 1); c.width = c.offsetWidth * r; c.height = c.offsetHeight * r; c.getContext("2d").scale(r, r); } 
+        }); 
+    }
     
+    // --- تشغيل عند التحميل ---
     window.onload = () => { if(localStorage.getItem('uec_session')) showApp(); };
+    window.onresize = resizeCanvas;
 </script>
 </body>
 </html>
