@@ -456,7 +456,6 @@
             
             document.getElementById('catOptions').innerHTML = uniqueCats.map(c => `<option value="${c}">`).join('');
             
-            // تهيئة أولية لـ itemOptions في صفحة المخزن بكل الأصناف
             filterInventoryItems();
 
             catSelect.innerHTML = `<option value="">${lang === 'ar' ? 'كل التصنيفات' : 'All Categories'}</option>` + 
@@ -490,14 +489,14 @@
         const addQty = parseInt(document.getElementById('stkQty').value) || 0;
         const existingItem = inventoryData.find(i => i.itemName === itemName);
         
-        // حساب الإجمالي الجديد: الرصيد القديم + المضاف
+        // حساب الإجمالي الجديد: الرصيد القديم + الكمية المكتوبة في الفورم
         const totalQty = existingItem ? (parseInt(existingItem.quantity) + addQty) : addQty;
 
         const payload = {
             action: 'updateStock',
             category: document.getElementById('stkCategory').value,
             itemName: itemName,
-            newQty: totalQty, // إرسال الإجمالي النهائي
+            newQty: totalQty, // إرسال الإجمالي النهائي (مثلاً 5 + 2 = 7)
             isConsumable: document.getElementById('stkConsumable').value
         };
 
