@@ -14,7 +14,6 @@
         #loginOverlay { position: fixed; inset: 0; background: linear-gradient(135deg, var(--blue) 0%, #001a33 100%); z-index: 9999; display: flex; align-items: center; justify-content: center; }
         .login-card { background: white; padding: 40px; border-radius: 20px; width: 440px; text-align: center; box-shadow: 0 15px 35px rgba(0,0,0,0.3); border-top: 8px solid var(--gold); }
         .login-card img { max-width: 120px; margin-bottom: 20px; }
-        /* تعديل محاذاة النص في حقول الدخول لليسار */
         .login-card input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; text-align: left; direction: ltr; }
         
         /* الهيدر */
@@ -89,7 +88,6 @@
 <div class="container" id="mainApp">
     <div class="tabs no-print">
         <button id="formTab" class="tab-btn active" onclick="switchTab('form')">النماذج</button>
-        <!-- إضافة زر المخازن -->
         <button id="invTab" class="tab-btn" onclick="switchTab('inv')" style="display:none;">المخازن</button>
         <button id="dashTab" class="tab-btn" onclick="switchTab('dash')" style="display:none;">الإحصائيات</button>
     </div>
@@ -162,26 +160,24 @@
         </form>
     </div>
 
-    <!-- قسم المخازن الجديد (إضافة فقط) -->
+    <!-- قسم المخازن -->
     <div id="invSection" style="display:none;">
         <h4 style="color:var(--blue); border-bottom:2px solid var(--gold); padding-bottom:5px;">📦 إدارة المخزون والمستهلكات</h4>
         <div class="search-area no-print" style="flex-wrap: wrap;">
             <div class="grid" style="width:100%; grid-template-columns: 1fr 1fr 1fr 1fr;">
-                <input type="text" id="invCat" placeholder="القسم (IT/Cleaning...)">
+                <select id="invCat"><option value="">اختر القسم...</option></select>
                 <input type="text" id="invItem" placeholder="اسم الصنف">
                 <input type="number" id="invQty" placeholder="الكمية الواردة">
                 <select id="invConsumable">
-                    <option value="No">أصل (جهاز)</option>
-                    <option value="Yes">مستهلك (أدوات)</option>
+                    <option value="No">أصل ثابت (جهاز)</option>
+                    <option value="Yes">مستهلك (قرطاسية/أحبار)</option>
                 </select>
             </div>
-            <button onclick="addInventoryItem()" class="btn-blue" style="width:100%">إضافة للمخزن</button>
+            <button onclick="addInventoryItem()" class="btn-blue" style="width:100%">إضافة للمخزن وتحديث الأرصدة</button>
         </div>
-        <div style="overflow-x:auto; margin-top:15px;">
+        <div style="overflow-x:auto;">
             <table class="asset-table">
-                <thead>
-                    <tr><th>القسم</th><th>الصنف</th><th>إجمالي الوارد</th><th style="color:red">المتاح حالياً</th><th>النوع</th><th>الحالة</th></tr>
-                </thead>
+                <thead><tr><th>القسم</th><th>الصنف</th><th>إجمالي الوارد</th><th>المنصرف</th><th>الرصيد المتاح</th><th>النوع</th></tr></thead>
                 <tbody id="invTableBody"></tbody>
             </table>
         </div>
@@ -201,10 +197,8 @@
                 <input type="text" id="dashSearchID" placeholder="أدخل ID الموظف هنا..." style="margin-bottom:0;">
                 <button onclick="auditEmployee()" class="btn-gold" id="btnAudit" style="width:150px;">بحث شامل</button>
             </div>
-            <!-- أزرار التصدير تحت البحث كما طلبت -->
             <div style="margin-top:15px; display:flex; gap:10px;">
-                <button onclick="exportData('all')" class="btn-blue" style="background:#28a745;">تصدير العهد النشطة (Excel)</button>
-                <button onclick="exportData('inv')" class="btn-blue" style="background:#6c757d;">تصدير جرد المخزن (Excel)</button>
+                <button onclick="exportInventoryToExcel()" class="btn-blue" style="background:#28a745;">تصدير جرد المخزن (Excel)</button>
             </div>
         </div>
 
@@ -231,7 +225,8 @@
 </div>
 
 <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz-r35RwmB06Ydm2EkXF5P2yMpXu-d4QeeseN5QJ9UpKGNWsqQB3P27OvVT-ZjcYRtC/exec"; 
+    // ضع رابط الـ Web App الخاص بك هنا
+    const SCRIPT_URL = "رابط_السكربت_الخاص_بك"; 
     const canvas = document.getElementById('signature-pad');
     const signaturePad = new SignaturePad(canvas);
     const newCanvas = document.getElementById('new-signature-pad');
@@ -239,6 +234,7 @@
     
     let lang = localStorage.getItem('uec_lang') || 'ar';
     let loadedSignature = "";
+    let currentUser = {};
 
     const translations = {
         ar: { 
@@ -302,55 +298,75 @@
     function handleLogin() {
         const user = document.getElementById('userInput').value;
         const pass = document.getElementById('passInput').value;
-        if(!user || !pass) return alert("Fill fields");
-        fetch(`${SCRIPT_URL}?action=login`, { method: 'POST', body: JSON.stringify({user, pass}) })
+        const btn = document.getElementById('loginBtn');
+        btn.innerText = "Checking...";
+        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({action: "login", user, pass}) })
         .then(res => res.json()).then(data => {
             if(data.status === "success") {
-                localStorage.setItem('uec_user', data.name);
-                localStorage.setItem('uec_devices', JSON.stringify(data.devices));
-                localStorage.setItem('uec_isSuper', data.isSuper);
+                currentUser = data;
+                localStorage.setItem('uec_session', JSON.stringify(data));
                 showApp();
-            } else alert(data.message);
+            } else {
+                alert(data.message);
+                btn.innerText = "Login";
+            }
         });
     }
 
     function showApp() {
+        const session = JSON.parse(localStorage.getItem('uec_session'));
+        if(!session) return;
+        currentUser = session;
         document.getElementById('loginOverlay').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
-        document.getElementById('adminInfo').innerText = "User: " + localStorage.getItem('uec_user');
-        if(localStorage.getItem('uec_isSuper') === 'true') {
+        document.getElementById('adminInfo').innerText = "User: " + session.name;
+        
+        if(session.isSuper === true || session.isSuper === "true") {
             document.getElementById('dashTab').style.display = 'block';
             document.getElementById('invTab').style.display = 'block';
         }
-        const devs = JSON.parse(localStorage.getItem('uec_devices') || '[]');
-        document.getElementById('assetList').innerHTML = devs.map(d => `<option value="${d}">${d}</option>`).join('');
+
+        document.getElementById('assetList').innerHTML = session.devices.map(d => `<option value="${d}">${d}</option>`).join('');
+        document.getElementById('invCat').innerHTML = '<option value="">اختر القسم...</option>' + 
+            session.categories.map(c => `<option value="${c}">${c}</option>`).join('');
+            
         applyLang(); resizeCanvas();
     }
 
-    // إضافة وظائف المخازن (إضافة فقط)
-    function loadInventory() {
-        fetch(`${SCRIPT_URL}?action=getInventory`)
-        .then(res => res.json()).then(data => {
-            const tbody = document.getElementById('invTableBody');
-            tbody.innerHTML = data.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[3]}</td><td style="color:red; font-weight:bold">${r[6]}</td><td>${r[7] === 'Yes' ? 'مستهلك' : 'أصل'}</td><td>${r[4]}</td></tr>`).join('');
-        });
+    function switchTab(t) {
+        document.getElementById('formSection').style.display = t === 'form' ? 'block' : 'none';
+        document.getElementById('dashSection').style.display = t === 'dash' ? 'block' : 'none';
+        document.getElementById('invSection').style.display = t === 'inv' ? 'block' : 'none';
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        if(t === 'form') document.getElementById('formTab').classList.add('active');
+        if(t === 'inv') { document.getElementById('invTab').classList.add('active'); loadInventory(); }
+        if(t === 'dash') { document.getElementById('dashTab').classList.add('active'); loadDashboard(); }
     }
 
+    // وظائف المخازن
     function addInventoryItem() {
         const payload = {
+            action: "addInventoryItem",
             category: document.getElementById('invCat').value,
             itemName: document.getElementById('invItem').value,
             quantity: document.getElementById('invQty').value,
             consumable: document.getElementById('invConsumable').value
         };
-        fetch(`${SCRIPT_URL}?action=addInventoryItem`, { method: 'POST', body: JSON.stringify(payload) })
-        .then(() => { alert(lang === 'ar' ? "تمت الإضافة للمخزن" : "Added to stock"); loadInventory(); });
+        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) })
+        .then(() => { alert("Done"); loadInventory(); });
+    }
+
+    function loadInventory() {
+        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({action: "getInventory"}) })
+        .then(res => res.json()).then(data => {
+            document.getElementById('invTableBody').innerHTML = data.map(r => `
+                <tr><td>${r[1]}</td><td>${r[2]}</td><td>${r[6]}</td><td style="color:red">${r[7]}</td><td style="font-weight:bold">${r[8]}</td><td>${r[9] == 'Yes' ? '📦 مستهلك' : '💻 أصل'}</td></tr>`).join('');
+        });
     }
 
     function searchEmployee() {
         const empID = document.getElementById('searchID').value;
-        if(!empID) return;
-        fetch(`${SCRIPT_URL}?action=search`, { method: 'POST', body: JSON.stringify({empID}) })
+        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({action: "search", empID}) })
         .then(res => res.json()).then(res => {
             const tbody = document.getElementById('employeeAssetsBody');
             tbody.innerHTML = "";
@@ -359,18 +375,17 @@
                 const last = res.data[res.data.length - 1];
                 document.getElementById('empID').value = last[3];
                 document.getElementById('empName').value = last[4];
-                if(last[8]) { loadedSignature = last[8]; }
+                if(last[8]) loadedSignature = last[8];
+                
                 let current = {};
                 res.data.forEach(r => {
-                    if(r[2].includes("Issue") || r[2].includes("In")) current[r[6]] = r;
-                    else if(r[2].includes("Return") || r[2].includes("Out")) delete current[r[6]];
+                    if(r[2].includes("Issue")) current[r[6]] = r;
+                    else if(r[2].includes("Return")) delete current[r[6]];
                 });
-                Object.values(current).reverse().forEach(r => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `<td>${new Date(r[0]).toLocaleDateString()}</td><td>${r[5]}</td><td>${r[6]}</td><td><button type="button" class="btn-gold" style="padding:2px 5px; font-size:0.7rem;" onclick="selectAsset('${r[5]}','${r[6]}','${r[7].replace(/\n/g,' ')}')">✓</button></td>`;
-                    tbody.appendChild(tr);
+                Object.values(current).forEach(r => {
+                    tbody.innerHTML += `<tr><td>${new Date(r[0]).toLocaleDateString()}</td><td>${r[5]}</td><td>${r[6]}</td><td><button type="button" class="btn-gold" onclick="selectAsset('${r[5]}','${r[6]}','${r[7]}')">✓</button></td></tr>`;
                 });
-            } else { alert(lang === 'ar' ? "لا توجد عهدة نشطة" : "No active assets"); document.getElementById('employeeAssetsWrapper').style.display = "none"; }
+            }
         });
     }
 
@@ -382,86 +397,58 @@
 
     function auditEmployee() {
         const empID = document.getElementById('dashSearchID').value;
-        if(!empID) return alert(lang === 'ar' ? "يرجى إدخال ID" : "Please enter ID");
-        const btn = event.target; btn.innerText = "...";
-        fetch(`${SCRIPT_URL}?action=getEmployeeFullHistory`, { method: 'POST', body: JSON.stringify({empID}) })
+        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({action: "getEmployeeFullHistory", empID}) })
         .then(res => res.json()).then(data => {
             document.getElementById('auditResults').style.display = "block";
-            document.getElementById('auditCurrentBody').innerHTML = data.current.length ? data.current.map(r => `<tr><td>${r[5]}</td><td>${r[6]}</td><td>${new Date(r[0]).toLocaleDateString()}</td></tr>`).join('') : '<tr><td colspan="3">N/A</td></tr>';
+            document.getElementById('auditCurrentBody').innerHTML = data.current.map(r => `<tr><td>${r[5]}</td><td>${r[6]}</td><td>${new Date(r[0]).toLocaleDateString()}</td></tr>`).join('');
             document.getElementById('auditIssuedCount').innerText = data.stats.issued;
             document.getElementById('auditReturnedCount').innerText = data.stats.returned;
-            document.getElementById('auditHistoryBody').innerHTML = data.history.map(h => `<tr><td>${new Date(h.date).toLocaleDateString()}</td><td style="color:${h.type.includes('Issue')?'green':'red'}">${h.type}</td><td>${h.asset}</td><td>${h.sn}</td><td>${h.admin}</td></tr>`).join('');
-            btn.innerText = translations[lang].btnAudit;
+            document.getElementById('auditHistoryBody').innerHTML = data.history.map(h => `<tr><td>${new Date(h.date).toLocaleDateString()}</td><td>${h.type}</td><td>${h.asset}</td><td>${h.sn}</td><td>${h.admin}</td></tr>`).join('');
         });
     }
 
     document.getElementById('assetForm').onsubmit = function(e) {
         e.preventDefault();
-        const type = document.getElementById('transType').value;
-        if(signaturePad.isEmpty() && !loadedSignature) return alert(lang === 'ar' ? "التوقيع إلزامي!" : "Signature Required!");
-        const btn = document.getElementById('saveBtn'); btn.disabled = true; btn.innerText = "Saving...";
+        const btn = document.getElementById('saveBtn'); btn.disabled = true;
         const payload = {
-            admin: localStorage.getItem('uec_user'), trans: type, transType: type,
-            empID: document.getElementById('empID').value, empName: document.getElementById('empName').value,
-            asset: document.getElementById('assetList').value, sn: document.getElementById('sn').value,
-            specs: document.getElementById('specs').value, signature: signaturePad.isEmpty() ? loadedSignature : signaturePad.toDataURL(),
-            newEmpID: document.getElementById('newEmpID').value, newEmpName: document.getElementById('newEmpName').value, newSignature: newSignaturePad.toDataURL()
+            action: "save",
+            admin: currentUser.name,
+            transType: document.getElementById('transType').value,
+            empID: document.getElementById('empID').value,
+            empName: document.getElementById('empName').value,
+            asset: document.getElementById('assetList').value,
+            sn: document.getElementById('sn').value,
+            specs: document.getElementById('specs').value,
+            signature: signaturePad.isEmpty() ? loadedSignature : signaturePad.toDataURL(),
+            newEmpID: document.getElementById('newEmpID').value,
+            newEmpName: document.getElementById('newEmpName').value,
+            newSignature: newSignaturePad.toDataURL()
         };
-        fetch(`${SCRIPT_URL}?action=save`, { method: 'POST', body: JSON.stringify(payload) })
-        .then(res => res.text()).then(t => {
-            if(t.includes("Success")) { alert(lang === 'ar' ? "تم الحفظ!" : "Saved!"); resetForm(); }
-            btn.disabled = false; btn.innerText = translations[lang].save;
-        });
+        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) })
+        .then(() => { alert("Saved"); resetForm(); btn.disabled = false; });
     };
 
     function resetForm() {
-        document.getElementById('assetForm').reset(); signaturePad.clear(); newSignaturePad.clear(); loadedSignature = "";
-        document.getElementById('employeeAssetsWrapper').style.display = "none"; document.getElementById('transferSection').style.display = "none";
-        document.getElementById('searchID').value = ""; document.getElementById('printSignaturesWrapper').style.display = "none";
+        document.getElementById('assetForm').reset(); signaturePad.clear(); newSignaturePad.clear();
+        document.getElementById('employeeAssetsWrapper').style.display = "none";
     }
 
     function checkTransfer() { document.getElementById('transferSection').style.display = document.getElementById('transType').value === 'Transfer' ? 'block' : 'none'; resizeCanvas(); }
 
     function preparePrint() {
         const type = document.getElementById('transType').value;
-        const headerTitle = document.querySelector('.print-header p');
-        const legalText = document.getElementById('legalText');
-        const sigWrapper = document.getElementById('printSignaturesWrapper');
-        const imgA = document.getElementById('printSignatureImgA');
-        const imgB = document.getElementById('printSignatureImgB');
-        const wrapB = document.getElementById('wrapperSignB');
-        const currentEmp = document.getElementById('empName').value || "................";
-        sigWrapper.style.display = "flex";
-        if (type === 'Return') {
-            headerTitle.innerText = "IT Asset Clearance | إخلاء طرف عهدة";
-            legalText.innerText = `يقر قسم IT بجامعة UEC باستلام الجهاز من الموظف/ ${currentEmp}.`;
-            wrapB.style.display = "none";
-        } else if (type === 'Transfer') {
-            headerTitle.innerText = "Asset Transfer Form | نموذج نقل عهدة";
-            legalText.innerHTML = `يقر الطرف الأول بنقل الملكية، ويقر الطرف الثاني بالاستلام.`;
-            wrapB.style.display = "block"; imgB.src = newSignaturePad.toDataURL();
-        } else {
-            headerTitle.innerText = "IT Asset Handover | استمارة استلام عهدة";
-            legalText.innerText = `أقر أنا الموظف/ ${currentEmp} باستلامي العهدة الموضحة أعلاه.`;
-            wrapB.style.display = "none";
+        const currentEmp = document.getElementById('empName').value;
+        document.getElementById('printSignaturesWrapper').style.display = "flex";
+        document.getElementById('printSignatureImgA').src = signaturePad.isEmpty() ? loadedSignature : signaturePad.toDataURL();
+        if(type === 'Transfer') {
+            document.getElementById('wrapperSignB').style.display = "block";
+            document.getElementById('printSignatureImgB').src = newSignaturePad.toDataURL();
         }
-        imgA.src = signaturePad.isEmpty() ? loadedSignature : signaturePad.toDataURL();
-        setTimeout(() => { window.print(); sigWrapper.style.display = "none"; }, 500);
-    }
-
-    function switchTab(t) {
-        document.getElementById('formSection').style.display = t === 'form' ? 'block' : 'none';
-        document.getElementById('dashSection').style.display = t === 'dash' ? 'block' : 'none';
-        document.getElementById('invSection').style.display = t === 'inv' ? 'block' : 'none';
-        
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        if(t === 'form') document.getElementById('formTab').classList.add('active');
-        if(t === 'inv') { document.getElementById('invTab').classList.add('active'); loadInventory(); }
-        if(t === 'dash') { document.getElementById('dashTab').classList.add('active'); loadDashboard(); document.getElementById('auditResults').style.display = "none"; }
+        window.print();
     }
 
     function loadDashboard() {
-        fetch(`${SCRIPT_URL}?action=getDashboard`, { method: 'POST', body: JSON.stringify({user: localStorage.getItem('uec_user')}) })
+        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({action: "getDashboard"}) })
         .then(res => res.json()).then(s => {
             document.getElementById('totalAssets').innerText = s.total;
             document.getElementById('issuedAssets').innerText = s.issued;
@@ -470,10 +457,10 @@
     }
 
     function toggleLang() { lang = lang === 'ar' ? 'en' : 'ar'; localStorage.setItem('uec_lang', lang); applyLang(); }
-    function handleLogout() { localStorage.clear(); window.location.reload(); }
-    function resizeCanvas() { [canvas, newCanvas].forEach(c => { const r = Math.max(window.devicePixelRatio || 1, 1); if(c) { c.width = c.offsetWidth * r; c.height = c.offsetHeight * r; c.getContext("2d").scale(r, r); } }); }
-    window.onresize = resizeCanvas;
-    if(localStorage.getItem('uec_user')) showApp();
+    function handleLogout() { localStorage.clear(); location.reload(); }
+    function resizeCanvas() { [canvas, newCanvas].forEach(c => { if(c) { const r = Math.max(window.devicePixelRatio || 1, 1); c.width = c.offsetWidth * r; c.height = c.offsetHeight * r; c.getContext("2d").scale(r, r); } }); }
+    
+    window.onload = () => { if(localStorage.getItem('uec_session')) showApp(); };
 </script>
 </body>
 </html>
