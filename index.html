@@ -481,33 +481,47 @@
     }
 
     function saveStock() {
-        const itemName = document.getElementById('stkItemName').value;
-        const addQty = parseInt(document.getElementById('stkQty').value) || 0;
-        const existingItem = inventoryData.find(i => i.itemName === itemName);
-        
-        const totalQty = existingItem ? (parseInt(existingItem.quantity) + addQty) : addQty;
+    const itemName = document.getElementById('stkItemName').value;
+    const addQtyInput = document.getElementById('stkQty').value;
+    
+    // تحويل المدخلات لأرقام صحيحة لضمان دقة العملية الحسابية
+    const addQty = parseInt(addQtyInput) || 0;
+    const existingItem = inventoryData.find(i => i.itemName === itemName);
+    
+    // التأكد من تحويل الكمية القديمة لرقم قبل الجمع
+    const currentQty = existingItem ? parseInt(existingItem.quantity) || 0 : 0;
+    const totalQty = currentQty + addQty;
 
-        const payload = {
-            action: 'updateStock',
-            category: document.getElementById('stkCategory').value,
-            itemName: itemName,
-            newQty: totalQty,
-            isConsumable: document.getElementById('stkConsumable').value
-        };
+    const payload = {
+        action: 'updateStock',
+        category: document.getElementById('stkCategory').value,
+        itemName: itemName,
+        newQty: totalQty, // إرسال الإجمالي النهائي المحسوب بدقة
+        isConsumable: document.getElementById('stkConsumable').value
+    };
 
-        if(!payload.category || !payload.itemName || addQty <= 0) return alert(lang === 'ar' ? "يرجى ملء جميع الخانات بشكل صحيح" : "Please fill all fields correctly");
-        
-        const btn = document.getElementById('btnSaveStock');
-        btn.disabled = true; btn.innerText = "...";
-        fetch(`${SCRIPT_URL}`, { method: 'POST', body: JSON.stringify(payload) })
-        .then(res => res.text()).then(() => {
-            alert(lang === 'ar' ? "تم تحديث المخزون بنجاح!" : "Stock Updated Successfully!");
-            document.getElementById('stockForm').reset();
-            document.getElementById('currentStockDisplay').innerText = "";
-            getInventoryList();
-            btn.disabled = false; btn.innerText = translations[lang].btnStkSave;
-        });
+    if(!payload.category || !payload.itemName || addQty <= 0) {
+        return alert(lang === 'ar' ? "يرجى ملء جميع الخانات بشكل صحيح" : "Please fill all fields correctly");
     }
+    
+    const btn = document.getElementById('btnSaveStock');
+    btn.disabled = true; 
+    btn.innerText = "...";
+
+    fetch(`${SCRIPT_URL}`, { method: 'POST', body: JSON.stringify(payload) })
+    .then(res => res.text()).then(() => {
+        alert(lang === 'ar' ? "تم تحديث المخزون بنجاح!" : "Stock Updated Successfully!");
+        document.getElementById('stockForm').reset();
+        document.getElementById('currentStockDisplay').innerText = "";
+        getInventoryList(); // تحديث القائمة المحلية فوراً
+        btn.disabled = false; 
+        btn.innerText = translations[lang].btnStkSave;
+    }).catch(err => {
+        console.error(err);
+        btn.disabled = false;
+        btn.innerText = translations[lang].btnStkSave;
+    });
+}
 
     function searchEmployee() {
         const empID = document.getElementById('searchID').value;
