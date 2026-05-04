@@ -168,7 +168,6 @@
         </form>
     </div>
 
-    <!-- Inventory Management Section -->
     <div id="inventorySection" style="display:none;">
         <div class="search-area no-print">
             <h3 id="lblInventoryTitle" style="margin:0; color:var(--blue);">إدارة المخزن</h3>
@@ -321,7 +320,6 @@
         document.getElementById('lblReturnedCount').innerText = d.returnedCount;
         document.getElementById('lblCategory').innerText = d.category;
         
-        // Inventory Tab Translations
         document.getElementById('lblInventoryTitle').innerText = d.invTitle;
         document.getElementById('lblStkCat').innerText = d.stkCat;
         document.getElementById('lblStkItem').innerText = d.stkItem;
@@ -337,7 +335,6 @@
         document.getElementById("thT2").innerText = d.thType;
         document.getElementById("thT4").innerText = d.thAdmin;
         
-        // Update items labels dynamically
         document.querySelectorAll('.lblItemType').forEach(el => el.innerText = d.type);
         document.querySelectorAll('.lblItemSN').forEach(el => el.innerText = d.sn);
         document.querySelectorAll('.lblItemQty').forEach(el => el.innerText = d.qty);
@@ -455,7 +452,6 @@
             const uniqueCats = [...new Set(inventoryData.map(i => i.category))].filter(c => c && c !== "");
             
             document.getElementById('catOptions').innerHTML = uniqueCats.map(c => `<option value="${c}">`).join('');
-            
             filterInventoryItems();
 
             catSelect.innerHTML = `<option value="">${lang === 'ar' ? 'كل التصنيفات' : 'All Categories'}</option>` + 
@@ -489,14 +485,13 @@
         const addQty = parseInt(document.getElementById('stkQty').value) || 0;
         const existingItem = inventoryData.find(i => i.itemName === itemName);
         
-        // حساب الإجمالي الجديد: الرصيد القديم + الكمية المكتوبة في الفورم
         const totalQty = existingItem ? (parseInt(existingItem.quantity) + addQty) : addQty;
 
         const payload = {
             action: 'updateStock',
             category: document.getElementById('stkCategory').value,
             itemName: itemName,
-            newQty: totalQty, // إرسال الإجمالي النهائي (مثلاً 5 + 2 = 7)
+            newQty: totalQty,
             isConsumable: document.getElementById('stkConsumable').value
         };
 
