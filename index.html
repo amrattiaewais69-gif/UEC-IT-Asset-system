@@ -173,7 +173,7 @@
                     <option value="Yes">مستهلك (قرطاسية/أحبار)</option>
                 </select>
             </div>
-            <button onclick="addInventoryItem()" class="btn-blue" style="width:100%">إضافة للمخزن وتحديث الأرصدة</button>
+            <button onclick="addInventoryItem()" class="btn-blue" style="width:100%">إضافة للمخزن</button>
         </div>
         <div style="overflow-x:auto;">
             <table class="asset-table">
@@ -197,8 +197,10 @@
                 <input type="text" id="dashSearchID" placeholder="أدخل ID الموظف هنا..." style="margin-bottom:0;">
                 <button onclick="auditEmployee()" class="btn-gold" id="btnAudit" style="width:150px;">بحث شامل</button>
             </div>
+            <!-- أزرار التصدير تحت البحث -->
             <div style="margin-top:15px; display:flex; gap:10px;">
-                <button onclick="exportInventoryToExcel()" class="btn-blue" style="background:#28a745;">تصدير جرد المخزن (Excel)</button>
+                <button onclick="exportData('active')" class="btn-blue" style="background:#28a745;">تصدير العهد النشطة (Excel)</button>
+                <button onclick="exportData('inventory')" class="btn-blue" style="background:#6c757d;">تصدير جرد المخزن (Excel)</button>
             </div>
         </div>
 
@@ -225,7 +227,6 @@
 </div>
 
 <script>
-    // ضع رابط الـ Web App الخاص بك هنا
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz-r35RwmB06Ydm2EkXF5P2yMpXu-d4QeeseN5QJ9UpKGNWsqQB3P27OvVT-ZjcYRtC/exec"; 
     const canvas = document.getElementById('signature-pad');
     const signaturePad = new SignaturePad(canvas);
@@ -234,7 +235,7 @@
     
     let lang = localStorage.getItem('uec_lang') || 'ar';
     let loadedSignature = "";
-    let currentUser = {};
+    let currentUserData = null;
 
     const translations = {
         ar: { 
@@ -298,17 +299,18 @@
     function handleLogin() {
         const user = document.getElementById('userInput').value;
         const pass = document.getElementById('passInput').value;
-        const btn = document.getElementById('loginBtn');
-        btn.innerText = "Checking...";
+        const loginBtn = document.getElementById('loginBtn');
+        if(!user || !pass) return;
+        loginBtn.innerText = "Checking...";
         fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({action: "login", user, pass}) })
         .then(res => res.json()).then(data => {
             if(data.status === "success") {
-                currentUser = data;
+                currentUserData = data;
                 localStorage.setItem('uec_session', JSON.stringify(data));
                 showApp();
             } else {
                 alert(data.message);
-                btn.innerText = "Login";
+                loginBtn.innerText = "Login";
             }
         });
     }
@@ -316,16 +318,18 @@
     function showApp() {
         const session = JSON.parse(localStorage.getItem('uec_session'));
         if(!session) return;
-        currentUser = session;
+        currentUserData = session;
         document.getElementById('loginOverlay').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
         document.getElementById('adminInfo').innerText = "User: " + session.name;
         
+        // الصلاحيات للتابات
         if(session.isSuper === true || session.isSuper === "true") {
             document.getElementById('dashTab').style.display = 'block';
             document.getElementById('invTab').style.display = 'block';
         }
 
+        // تعبئة القوائم
         document.getElementById('assetList').innerHTML = session.devices.map(d => `<option value="${d}">${d}</option>`).join('');
         document.getElementById('invCat').innerHTML = '<option value="">اختر القسم...</option>' + 
             session.categories.map(c => `<option value="${c}">${c}</option>`).join('');
@@ -343,7 +347,15 @@
         if(t === 'dash') { document.getElementById('dashTab').classList.add('active'); loadDashboard(); }
     }
 
-    // وظائف المخازن
+    // المخازن
+    function loadInventory() {
+        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({action: "getInventory"}) })
+        .then(res => res.json()).then(data => {
+            document.getElementById('invTableBody').innerHTML = data.map(r => `
+                <tr><td>${r[1]}</td><td>${r[2]}</td><td>${r[6]}</td><td style="color:red">${r[7]}</td><td style="font-weight:bold">${r[8]}</td><td>${r[9] == 'Yes' ? '📦 مستهلك' : '💻 أصل'}</td></tr>`).join('');
+        });
+    }
+
     function addInventoryItem() {
         const payload = {
             action: "addInventoryItem",
@@ -353,15 +365,7 @@
             consumable: document.getElementById('invConsumable').value
         };
         fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) })
-        .then(() => { alert("Done"); loadInventory(); });
-    }
-
-    function loadInventory() {
-        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({action: "getInventory"}) })
-        .then(res => res.json()).then(data => {
-            document.getElementById('invTableBody').innerHTML = data.map(r => `
-                <tr><td>${r[1]}</td><td>${r[2]}</td><td>${r[6]}</td><td style="color:red">${r[7]}</td><td style="font-weight:bold">${r[8]}</td><td>${r[9] == 'Yes' ? '📦 مستهلك' : '💻 أصل'}</td></tr>`).join('');
-        });
+        .then(() => { alert("Saved to stock"); loadInventory(); });
     }
 
     function searchEmployee() {
@@ -407,12 +411,13 @@
         });
     }
 
+    // حفظ البيانات
     document.getElementById('assetForm').onsubmit = function(e) {
         e.preventDefault();
         const btn = document.getElementById('saveBtn'); btn.disabled = true;
         const payload = {
             action: "save",
-            admin: currentUser.name,
+            admin: currentUserData.name,
             transType: document.getElementById('transType').value,
             empID: document.getElementById('empID').value,
             empName: document.getElementById('empName').value,
@@ -425,7 +430,7 @@
             newSignature: newSignaturePad.toDataURL()
         };
         fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) })
-        .then(() => { alert("Saved"); resetForm(); btn.disabled = false; });
+        .then(() => { alert("Saved Successfully!"); resetForm(); btn.disabled = false; });
     };
 
     function resetForm() {
@@ -437,14 +442,15 @@
 
     function preparePrint() {
         const type = document.getElementById('transType').value;
-        const currentEmp = document.getElementById('empName').value;
+        const imgA = document.getElementById('printSignatureImgA');
+        const imgB = document.getElementById('printSignatureImgB');
         document.getElementById('printSignaturesWrapper').style.display = "flex";
-        document.getElementById('printSignatureImgA').src = signaturePad.isEmpty() ? loadedSignature : signaturePad.toDataURL();
+        imgA.src = signaturePad.isEmpty() ? loadedSignature : signaturePad.toDataURL();
         if(type === 'Transfer') {
             document.getElementById('wrapperSignB').style.display = "block";
-            document.getElementById('printSignatureImgB').src = newSignaturePad.toDataURL();
+            imgB.src = newSignaturePad.toDataURL();
         }
-        window.print();
+        setTimeout(() => { window.print(); }, 500);
     }
 
     function loadDashboard() {
@@ -454,6 +460,10 @@
             document.getElementById('issuedAssets').innerText = s.issued;
             document.getElementById('stockAssets').innerText = s.returned;
         });
+    }
+
+    function exportData(type) {
+        window.open(`${SCRIPT_URL}?action=export&type=${type}`, '_blank');
     }
 
     function toggleLang() { lang = lang === 'ar' ? 'en' : 'ar'; localStorage.setItem('uec_lang', lang); applyLang(); }
