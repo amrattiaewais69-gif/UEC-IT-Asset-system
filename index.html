@@ -10,62 +10,55 @@
         :root { --blue: #003366; --gold: #C5A059; --white: #ffffff; --gray: #f4f7f6; }
         body { font-family: 'Tajawal', sans-serif; background: var(--gray); margin: 0; color: #333; }
         
-        /* شاشة الدخول */
         #loginOverlay { position: fixed; inset: 0; background: linear-gradient(135deg, var(--blue) 0%, #001a33 100%); z-index: 9999; display: flex; align-items: center; justify-content: center; }
         .login-card { background: white; padding: 40px; border-radius: 20px; width: 440px; text-align: center; box-shadow: 0 15px 35px rgba(0,0,0,0.3); border-top: 8px solid var(--gold); }
         .login-card img { max-width: 120px; margin-bottom: 20px; }
         .login-card input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; text-align: left; direction: ltr; }
         
-        /* الهيدر */
         header { background: var(--blue); color: white; padding: 0 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid var(--gold); height: 65px; position: sticky; top: 0; z-index: 100; }
         .logo-container { display: flex; align-items: center; gap: 10px; background: white; padding: 5px 12px; border-radius: 8px; height: 45px; }
         .logo-container img { height: 35px; }
         
-        /* الحاوية الرئيسية */
         .container { max-width: 900px; margin: 20px auto; background: white; padding: 25px; border-radius: 15px; display: none; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
         .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
         .tab-btn { padding: 10px 20px; border: none; background: #eee; cursor: pointer; border-radius: 8px; font-weight: bold; font-family: inherit; }
         .tab-btn.active { background: var(--blue); color: white; }
         
-        /* الفورم */
         .search-area { background: #eef2f3; padding: 15px; border-radius: 12px; margin-bottom: 20px; border-right: 6px solid var(--blue); display: flex; gap: 10px; align-items: flex-end; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
         input, select, textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-family: inherit; font-size: 0.9rem; }
         .btn-blue { background: var(--blue); color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; }
         .btn-gold { background: var(--gold); color: var(--blue); border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; }
         
-        /* ستايل صفوف الأجهزة الديناميكية */
         .items-block { border: 1px solid #ddd; padding: 15px; border-radius: 10px; margin-bottom: 15px; background: #fafafa; position: relative; }
         .btn-add-item { background: var(--gold); color: var(--blue); border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-bottom: 15px; }
         .btn-remove-item { background: #d9534f; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; position: absolute; top: 10px; left: 10px; font-size: 0.7rem; }
 
-        /* التوقيع */
         .signature-wrapper { border: 2px dashed #bbb; background: #fdfdfd; height: 140px; position: relative; margin: 5px 0; border-radius: 8px; }
         canvas { width: 100%; height: 100%; }
         
-        /* الجداول */
         #employeeAssetsWrapper { display:none; margin: 15px 0; padding: 10px; border: 1px solid #eee; border-radius: 10px; background: #fff; }
         .asset-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
         .asset-table th { background: var(--blue); color: white; padding: 8px; }
         .asset-table td { padding: 8px; border-bottom: 1px solid #eee; text-align: center; }
 
-        /* الطباعة */
         #legalDisclaimer { display: none; margin-top: 25px; padding: 10px; border-top: 1px solid #000; font-size: 0.85rem; line-height: 1.5; }
         #printSignaturesWrapper { display: none; margin-top: 30px; width: 100%; gap: 20px; }
 
         @media print {
-            .no-print, header, #loginOverlay, .tabs, button, .signature-wrapper, #employeeAssetsWrapper, .search-audit-box, .stock-info, .btn-add-item, .btn-remove-item { display: none !important; }
-            .container { display: block !important; box-shadow: none; width: 100%; border: none; }
+            .no-print, header, #loginOverlay, .tabs, button, .signature-wrapper, .search-audit-box, .btn-add-item, .btn-remove-item, .search-area { display: none !important; }
+            .container { display: block !important; box-shadow: none; width: 100%; border: none; margin: 0; padding: 0; }
             .items-block { border: none; border-bottom: 1px solid #ccc; background: transparent; padding: 10px 0; }
             .print-header { display: flex !important; align-items: center; justify-content: center; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px; }
             #legalDisclaimer { display: block !important; }
             #printSignaturesWrapper { display: flex !important; flex-direction: row !important; justify-content: space-between !important; align-items: flex-start !important; }
             #printSignaturesWrapper > div { flex: 1; max-width: 45%; text-align: center; }
             input, select, textarea { border: none !important; font-weight: bold; background: transparent !important; }
+            #auditResults { display: block !important; }
+            #auditResults .grid { display: block !important; }
+            #auditResults table { font-size: 10pt !important; }
         }
         .print-header { display: none; }
-        
-        /* ستايل خانة الرصيد */
         .stock-info { background: #fff9eb; padding: 5px 10px; border-radius: 5px; border: 1px solid var(--gold); font-weight: bold; font-size: 0.85rem; display: flex; justify-content: space-between; margin-top: 5px; }
     </style>
 </head>
@@ -104,7 +97,7 @@
         <img src="logo.png" height="50">
         <div style="text-align:center; margin-right:15px;">
             <h2 style="margin:0">University of East Capital</h2>
-            <p style="margin:0">IT Asset Handover | استمارة عهدة</p>
+            <p id="printPageTitle" style="margin:0">IT Asset Report | تقرير العهدة</p>
         </div>
     </div>
 
@@ -136,11 +129,7 @@
                 </div>
             </div>
 
-            <!-- حاوية الأصناف الديناميكية -->
-            <div id="itemsContainer">
-                <!-- سيتم إضافة الصفوف هنا -->
-            </div>
-            
+            <div id="itemsContainer"></div>
             <button type="button" class="btn-add-item no-print" onclick="addItemRow()">+ إضافة جهاز/صنف آخر</button>
 
             <div id="transferSection" class="no-print" style="display:none; background:#fff9eb; padding:15px; border-radius:10px; border:1px solid var(--gold); margin-bottom:15px;">
@@ -167,8 +156,8 @@
             <div id="legalDisclaimer"><p id="legalText"></p></div>
 
             <div id="printSignaturesWrapper">
-                <div><p id="labelSignA" style="font-weight: bold; margin-bottom: 5px;">توقيع الطرف الأول</p><img id="printSignatureImgA"></div>
-                <div id="wrapperSignB" style="display: none;"><p style="font-weight: bold; margin-bottom: 5px;">توقيع الطرف الثاني (المستلم)</p><img id="printSignatureImgB"></div>
+                <div><p id="labelSignA" style="font-weight: bold; margin-bottom: 5px;">توقيع الموظف</p><img id="printSignatureImgA" style="max-height: 80px;"></div>
+                <div id="wrapperSignB" style="display: none;"><p style="font-weight: bold; margin-bottom: 5px;">توقيع المستلم الجديد</p><img id="printSignatureImgB" style="max-height: 80px;"></div>
             </div>
             
             <div class="grid no-print" style="margin-top:20px">
@@ -179,27 +168,32 @@
     </div>
 
     <div id="dashSection" style="display:none;">
-        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:15px; text-align:center; margin-bottom:25px;">
+        <div class="no-print" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:15px; text-align:center; margin-bottom:25px;">
              <div style="background:#fff; padding:20px; border-radius:10px; border-bottom:5px solid var(--blue);"><h3 id="statTotal">إجمالي الأجهزة</h3><p id="totalAssets" style="font-size:2rem; font-weight:bold;">0</p></div>
              <div style="background:#fff; padding:20px; border-radius:10px; border-bottom:5px solid green;"><h3 id="statIssued">خارج (عهدة)</h3><p id="issuedAssets" style="font-size:2rem; font-weight:bold; color:green;">0</p></div>
              <div style="background:#fff; padding:20px; border-radius:10px; border-bottom:5px solid var(--gold);"><h3 id="statStock">داخل (مخزن)</h3><p id="stockAssets" style="font-size:2rem; font-weight:bold; color:var(--gold);">0</p></div>
         </div>
 
-        <div class="search-audit-box" style="background:#eef2f3; padding:20px; border-radius:12px; margin-bottom:20px; border-right:8px solid var(--blue);">
+        <div class="search-audit-box no-print" style="background:#eef2f3; padding:20px; border-radius:12px; margin-bottom:20px; border-right:8px solid var(--blue);">
             <h4 id="lblAuditTitle" style="margin:0 0 10px 0; color:var(--blue);">🔍 استعلام عن سجل موظف:</h4>
             <div style="display:flex; gap:10px;">
                 <input type="text" id="dashSearchID" placeholder="أدخل ID الموظف هنا..." style="margin-bottom:0;">
                 <button onclick="auditEmployee()" class="btn-gold" id="btnAudit" style="width:150px;">بحث شامل</button>
+                <button onclick="printAuditHistory()" class="btn-blue" id="btnPrintAudit" style="display:none; background:#28a745;">طباعة السجل</button>
             </div>
         </div>
 
         <div id="auditResults" style="display:none;">
+            <div style="margin-bottom: 20px; border-bottom: 1px solid #ddd; padding-bottom: 10px;">
+                <h3 id="auditEmpDisplayName" style="margin: 0; color: var(--blue);"></h3>
+                <p id="auditEmpDisplayID" style="margin: 5px 0; font-weight: bold;"></p>
+            </div>
             <div class="grid">
                 <div style="background:white; padding:15px; border-radius:10px; border:1px solid #eee;">
                     <h4 id="lblActiveAssets" style="color:var(--blue); border-bottom:2px solid var(--gold); padding-bottom:5px;">📋 العهدة الحالية النشطة</h4>
                     <table class="asset-table"><thead><tr><th id="thDev">الجهاز</th><th>S/N</th><th id="thDat">التاريخ</th></tr></thead><tbody id="auditCurrentBody"></tbody></table>
                 </div>
-                <div style="background:white; padding:15px; border-radius:10px; border:1px solid #eee;">
+                <div class="no-print" style="background:white; padding:15px; border-radius:10px; border:1px solid #eee;">
                     <h4 id="lblSummaryTitle" style="color:var(--blue); border-bottom:2px solid var(--gold); padding-bottom:5px;">📊 ملخص النشاط</h4>
                     <p><span id="lblIssuedCount">عمليات الاستلام:</span> <b id="auditIssuedCount" style="color:green;">0</b></p>
                     <p><span id="lblReturnedCount">عمليات الإرجاع:</span> <b id="auditReturnedCount" style="color:red;">0</b></p>
@@ -210,6 +204,11 @@
                 <div style="max-height:300px; overflow-y:auto;">
                     <table class="asset-table"><thead><tr><th id="thT1">التاريخ</th><th id="thT2">النوع</th><th id="thT3">الجهاز</th><th>S/N</th><th id="thT4">الأدمن</th></tr></thead><tbody id="auditHistoryBody"></tbody></table>
                 </div>
+            </div>
+            <!-- مكان عرض التوقيع في السجل المطبوع -->
+            <div class="print-only" id="auditPrintSignature" style="display:none; margin-top:30px; text-align:left;">
+                <p style="font-weight:bold; margin-bottom:10px;">توقيع الموظف المعتمد:</p>
+                <img id="auditSignatureImg" style="max-height:100px; border:1px solid #eee; padding:5px;">
             </div>
         </div>
     </div>
@@ -225,6 +224,7 @@
     let lang = localStorage.getItem('uec_lang') || 'ar';
     let loadedSignature = "";
     let inventoryData = []; 
+    let currentAuditData = null;
 
     const translations = {
         ar: { 
@@ -283,12 +283,6 @@
         document.getElementById("thSelect").innerText = d.thSelect;
         document.getElementById("thT2").innerText = d.thType;
         document.getElementById("thT4").innerText = d.thAdmin;
-        
-        // تحديث مسميات الصفوف الموجودة
-        document.querySelectorAll('.lblItemType').forEach(el => el.innerText = d.type);
-        document.querySelectorAll('.lblItemSN').forEach(el => el.innerText = d.sn);
-        document.querySelectorAll('.lblItemQty').forEach(el => el.innerText = d.qty);
-        document.querySelectorAll('.lblItemSpecs').forEach(el => el.innerText = d.specs);
     }
 
     function addItemRow(assetVal = "", snVal = "", specsVal = "") {
@@ -297,7 +291,6 @@
         const row = document.createElement('div');
         row.className = 'items-block';
         row.id = `item-${id}`;
-        
         row.innerHTML = `
             <button type="button" class="btn-remove-item no-print" onclick="removeItemRow('${id}')">X</button>
             <div class="grid">
@@ -338,14 +331,9 @@
     function populateSingleAssetSelect(select, selectedVal) {
         const cat = document.getElementById('categoryList').value;
         const filtered = cat === "" ? inventoryData : inventoryData.filter(i => i.category === cat);
-        
         select.innerHTML = `<option value="">${lang === 'ar' ? 'اختر الصنف...' : 'Select Item...'}</option>` + 
         filtered.map(item => `<option value="${item.itemName}" data-consumable="${item.isConsumable}">${item.itemName}</option>`).join('');
-        
-        if(selectedVal) {
-            select.value = selectedVal;
-            updateStockDisplay(select);
-        }
+        if(selectedVal) { select.value = selectedVal; updateStockDisplay(select); }
     }
 
     function updateStockDisplay(select) {
@@ -356,30 +344,12 @@
         const snField = row.querySelector('.sn-field');
         const qtyField = row.querySelector('.qty-field');
         const snInput = row.querySelector('.itemSN');
-
-        if(!selected) {
-            stockContainer.style.visibility = "hidden";
-            return;
-        }
-
+        if(!selected) { stockContainer.style.visibility = "hidden"; return; }
         const isConsumable = select.options[select.selectedIndex].getAttribute('data-consumable') === 'yes';
-        
-        if(isConsumable) {
-            snField.style.display = "none";
-            qtyField.style.display = "block";
-            snInput.required = false;
-        } else {
-            snField.style.display = "block";
-            qtyField.style.display = "none";
-            snInput.required = true;
-        }
-
+        if(isConsumable) { snField.style.display = "none"; qtyField.style.display = "block"; snInput.required = false; }
+        else { snField.style.display = "block"; qtyField.style.display = "none"; snInput.required = true; }
         const item = inventoryData.find(i => i.itemName === selected);
-        if(item) {
-            stockContainer.style.visibility = "visible";
-            stockSpan.innerText = item.quantity;
-            stockSpan.style.color = item.quantity < 3 ? "red" : "inherit";
-        }
+        if(item) { stockContainer.style.visibility = "visible"; stockSpan.innerText = item.quantity; stockSpan.style.color = item.quantity < 3 ? "red" : "inherit"; }
     }
 
     function filterAssetsByCategory() {
@@ -422,7 +392,6 @@
             const uniqueCats = [...new Set(inventoryData.map(i => i.category))].filter(c => c && c !== "");
             catSelect.innerHTML = `<option value="">${lang === 'ar' ? 'كل التصنيفات' : 'All Categories'}</option>` + 
                 uniqueCats.map(c => `<option value="${c}">${c}</option>`).join('');
-            
             if(document.querySelectorAll('.items-block').length === 0) addItemRow();
         });
     }
@@ -459,21 +428,33 @@
         if(!empID) return alert(lang === 'ar' ? "يرجى إدخال ID" : "Please enter ID");
         fetch(`${SCRIPT_URL}?action=getEmployeeFullHistory`, { method: 'POST', body: JSON.stringify({empID}) })
         .then(res => res.json()).then(data => {
+            currentAuditData = data;
             document.getElementById('auditResults').style.display = "block";
+            document.getElementById('btnPrintAudit').style.display = "inline-block";
+            document.getElementById('auditEmpDisplayName').innerText = data.empName || "Unknown Employee";
+            document.getElementById('auditEmpDisplayID').innerText = "ID: " + empID;
             document.getElementById('auditCurrentBody').innerHTML = data.current.length ? data.current.map(r => `<tr><td>${r[5]}</td><td>${r[6]}</td><td>${new Date(r[0]).toLocaleDateString()}</td></tr>`).join('') : '<tr><td colspan="3">N/A</td></tr>';
             document.getElementById('auditIssuedCount').innerText = data.stats.issued;
             document.getElementById('auditReturnedCount').innerText = data.stats.returned;
             document.getElementById('auditHistoryBody').innerHTML = data.history.map(h => `<tr><td>${new Date(h.date).toLocaleDateString()}</td><td style="color:${h.type.includes('Issue')?'green':'red'}">${h.type}</td><td>${h.asset}</td><td>${h.sn}</td><td>${h.admin}</td></tr>`).join('');
+            if(data.signature) {
+                document.getElementById('auditSignatureImg').src = data.signature;
+            }
         });
+    }
+
+    function printAuditHistory() {
+        if(!currentAuditData) return;
+        document.getElementById('printPageTitle').innerText = "Employee Asset History | سجل عهدة موظف";
+        document.getElementById('auditPrintSignature').style.display = "block";
+        setTimeout(() => { window.print(); document.getElementById('auditPrintSignature').style.display = "none"; }, 500);
     }
 
     document.getElementById('assetForm').onsubmit = function(e) {
         e.preventDefault();
         if(signaturePad.isEmpty() && !loadedSignature) return alert(lang === 'ar' ? "التوقيع إلزامي!" : "Signature Required!");
-        
         const btn = document.getElementById('saveBtn'); 
         btn.disabled = true; btn.innerText = "Saving...";
-
         const items = [];
         document.querySelectorAll('.items-block').forEach(row => {
             const select = row.querySelector('.assetList');
@@ -485,26 +466,19 @@
                 specs: row.querySelector('.itemSpecs').value
             });
         });
-
         const payload = {
-            action: 'saveMulti', // تأكد أن الـ GAS يدعم هذا الأكشن لمعالجة المصفوفة
-            admin: localStorage.getItem('uec_user'),
+            action: 'saveMulti', admin: localStorage.getItem('uec_user'),
             transType: document.getElementById('transType').value,
-            empID: document.getElementById('empID').value,
-            empName: document.getElementById('empName').value,
-            date: document.getElementById('docDate').value,
-            items: items,
+            empID: document.getElementById('empID').value, empName: document.getElementById('empName').value,
+            date: document.getElementById('docDate').value, items: items,
             signature: signaturePad.isEmpty() ? loadedSignature : signaturePad.toDataURL(),
-            newEmpID: document.getElementById('newEmpID').value,
-            newEmpName: document.getElementById('newEmpName').value,
+            newEmpID: document.getElementById('newEmpID').value, newEmpName: document.getElementById('newEmpName').value,
             newSignature: newSignaturePad.toDataURL()
         };
-
         fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) })
         .then(res => res.text()).then(t => {
-            alert(lang === 'ar' ? "تم حفظ جميع العمليات وتحديث المخزن!" : "All items saved & stock updated!");
-            resetForm(); getInventoryList();
-            btn.disabled = false; btn.innerText = translations[lang].save;
+            alert(lang === 'ar' ? "تم حفظ جميع العمليات!" : "All items saved!");
+            resetForm(); getInventoryList(); btn.disabled = false; btn.innerText = translations[lang].save;
         });
     };
 
@@ -522,7 +496,7 @@
 
     function preparePrint() {
         const type = document.getElementById('transType').value;
-        const headerTitle = document.querySelector('.print-header p');
+        const headerTitle = document.getElementById('printPageTitle');
         const legalText = document.getElementById('legalText');
         const sigWrapper = document.getElementById('printSignaturesWrapper');
         const imgA = document.getElementById('printSignatureImgA');
@@ -530,7 +504,6 @@
         const wrapB = document.getElementById('wrapperSignB');
         const currentEmp = document.getElementById('empName').value || "................";
         sigWrapper.style.display = "flex";
-        
         if (type === 'Return') {
             headerTitle.innerText = "IT Asset Clearance | إخلاء طرف عهدة";
             legalText.innerText = `يقر قسم IT بجامعة UEC باستلام الأجهزة الموضحة أعلاه من الموظف/ ${currentEmp}.`;
