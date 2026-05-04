@@ -121,15 +121,30 @@
                 </div>
                 <div><label id="lblID">الرقم الوظيفي</label><input type="text" id="empID" required></div>
                 <div><label id="lblName">اسم الموظف</label><input type="text" id="empName" required></div>
+                
+                <!-- إضافة خانة التصنيف -->
                 <div>
-                    <label id="lblType">الجهاز</label>
+                    <label id="lblCategory">التصنيف</label>
+                    <select id="categoryList" onchange="filterAssetsByCategory()">
+                        <option value="">كل التصنيفات</option>
+                        <option value="IT">IT</option>
+                        <option value="Stationery">Stationery (قرطاسية)</option>
+                        <option value="Cleaning">Cleaning (منظفات)</option>
+                        <option value="Other">Other (أخرى)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label id="lblType">الجهاز / الصنف</label>
                     <select id="assetList" onchange="updateStockDisplay()"></select>
                     <div id="stockContainer" class="stock-info no-print" style="visibility: hidden;">
                         <span id="lblStockText">الرصيد المتاح:</span>
                         <span id="currentStock">0</span>
                     </div>
                 </div>
+                
                 <div><label id="lblSN">S/N</label><input type="text" id="sn" required></div>
+                <div><label id="lblDateInput">التاريخ</label><input type="date" id="docDate"></div>
                 <div style="grid-column: span 2"><label id="lblSpecs">المواصفات</label><textarea id="specs" rows="2"></textarea></div>
             </div>
 
@@ -214,30 +229,30 @@
     
     let lang = localStorage.getItem('uec_lang') || 'ar';
     let loadedSignature = "";
-    let inventoryData = []; // تخزين بيانات المخزن محلياً لتحديث الرصيد فوراً
+    let inventoryData = []; 
 
     const translations = {
         ar: { 
             formTab: "النماذج", dashTab: "الإحصائيات", searchPlace: "رقم الموظف للبحث...", btnSearch: "بحث", 
-            trans: "نوع العملية", id: "الرقم الوظيفي", name: "اسم الموظف", type: "الجهاز", sn: "S/N", specs: "المواصفات", 
+            trans: "نوع العملية", id: "الرقم الوظيفي", name: "اسم الموظف", type: "الجهاز / الصنف", sn: "S/N", specs: "المواصفات", 
             sign: "التوقيع:", save: "حفظ البيانات", print: "طباعة", langBtn: "English", assetsTitle: "العهدة الحالية",
             statTotal: "إجمالي الأجهزة", statIssued: "خارج (عهدة)", statStock: "داخل (مخزن)",
             auditTitle: "🔍 استعلام عن سجل موظف:", auditPlace: "أدخل ID الموظف هنا...", btnAudit: "بحث شامل",
             activeAssets: "📋 العهدة الحالية النشطة", summaryTitle: "📊 ملخص النشاط", timelineTitle: "🕒 السجل الزمني الكامل",
             issuedCount: "عمليات الاستلام:", returnedCount: "عمليات الإرجاع:",
             thDate: "التاريخ", thAsset: "الجهاز", thSelect: "اختيار", thAdmin: "الأدمن", thType: "النوع",
-            stockText: "الرصيد المتاح:"
+            stockText: "الرصيد المتاح:", category: "التصنيف"
         },
         en: { 
             formTab: "Forms", dashTab: "Statistics", searchPlace: "Employee ID to search...", btnSearch: "Search", 
-            trans: "Process Type", id: "Employee ID", name: "Employee Name", type: "Asset Type", sn: "S/N", specs: "Specifications", 
+            trans: "Process Type", id: "Employee ID", name: "Employee Name", type: "Asset/Item Type", sn: "S/N", specs: "Specifications", 
             sign: "Signature:", save: "Save Data", print: "Print", langBtn: "العربية", assetsTitle: "Current Assets",
             statTotal: "Total Assets", statIssued: "Issued (Out)", statStock: "In Stock",
             auditTitle: "🔍 Employee History Inquiry:", auditPlace: "Enter Emp ID here...", btnAudit: "Full Audit",
             activeAssets: "📋 Current Active Assets", summaryTitle: "📊 Activity Summary", timelineTitle: "🕒 Full Timeline History",
             issuedCount: "Total Issued:", returnedCount: "Total Returned:",
             thDate: "Date", thAsset: "Asset", thSelect: "Select", thAdmin: "Admin", thType: "Type",
-            stockText: "Current Stock:"
+            stockText: "Current Stock:", category: "Category"
         }
     };
 
@@ -271,6 +286,7 @@
         document.getElementById('lblIssuedCount').innerText = d.issuedCount;
         document.getElementById('lblReturnedCount').innerText = d.returnedCount;
         document.getElementById('lblStockText').innerText = d.stockText;
+        document.getElementById('lblCategory').innerText = d.category;
         ["thDate","thDat","thT1"].forEach(id => document.getElementById(id).innerText = d.thDate);
         ["thAsset","thDev","thT3"].forEach(id => document.getElementById(id).innerText = d.thAsset);
         document.getElementById("thSelect").innerText = d.thSelect;
@@ -297,6 +313,7 @@
         document.getElementById('mainApp').style.display = 'block';
         document.getElementById('adminInfo').innerText = "User: " + localStorage.getItem('uec_user');
         if(localStorage.getItem('uec_isSuper') === 'true') document.getElementById('dashTab').style.display = 'block';
+        document.getElementById('docDate').valueAsDate = new Date();
         getInventoryList();
         applyLang(); resizeCanvas();
     }
@@ -307,12 +324,23 @@
         .then(items => {
             if (items.status === "error") return console.error(items.message);
             inventoryData = items;
-            const select = document.getElementById('assetList');
-            select.innerHTML = '<option value="">اختر الجهاز...</option>' + items.map(item => 
-                `<option value="${item.itemName}">${item.itemName}</option>`
-            ).join('');
+            populateAssetSelect(items);
         })
         .catch(err => console.error("Fetch Error:", err));
+    }
+
+    function populateAssetSelect(items) {
+        const select = document.getElementById('assetList');
+        select.innerHTML = '<option value="">اختر الصنف...</option>' + items.map(item => 
+            `<option value="${item.itemName}">${item.itemName}</option>`
+        ).join('');
+    }
+
+    function filterAssetsByCategory() {
+        const cat = document.getElementById('categoryList').value;
+        const filtered = cat === "" ? inventoryData : inventoryData.filter(i => i.category === cat);
+        populateAssetSelect(filtered);
+        document.getElementById('stockContainer').style.visibility = "hidden";
     }
 
     function updateStockDisplay() {
@@ -387,7 +415,8 @@
             empID: document.getElementById('empID').value, empName: document.getElementById('empName').value,
             asset: document.getElementById('assetList').value, sn: document.getElementById('sn').value,
             specs: document.getElementById('specs').value, signature: signaturePad.isEmpty() ? loadedSignature : signaturePad.toDataURL(),
-            newEmpID: document.getElementById('newEmpID').value, newEmpName: document.getElementById('newEmpName').value, newSignature: newSignaturePad.toDataURL()
+            newEmpID: document.getElementById('newEmpID').value, newEmpName: document.getElementById('newEmpName').value, newSignature: newSignaturePad.toDataURL(),
+            date: document.getElementById('docDate').value
         };
         fetch(`${SCRIPT_URL}?action=save`, { method: 'POST', body: JSON.stringify(payload) })
         .then(res => res.text()).then(t => {
@@ -401,6 +430,8 @@
         document.getElementById('employeeAssetsWrapper').style.display = "none"; document.getElementById('transferSection').style.display = "none";
         document.getElementById('searchID').value = ""; document.getElementById('printSignaturesWrapper').style.display = "none";
         document.getElementById('stockContainer').style.visibility = "hidden";
+        document.getElementById('docDate').valueAsDate = new Date();
+        populateAssetSelect(inventoryData);
     }
 
     function checkTransfer() { document.getElementById('transferSection').style.display = document.getElementById('transType').value === 'Transfer' ? 'block' : 'none'; resizeCanvas(); }
