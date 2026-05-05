@@ -6,10 +6,8 @@
     <title>UEC Assets Control</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
-    <!-- مكتبة تصدير الإكسيل -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        :root { --blue: #003366; --gold: #C5A059; --white: #ffffff; --gray: #f4f7f6; --excel-green: #217346; }
+        :root { --blue: #003366; --gold: #C5A059; --white: #ffffff; --gray: #f4f7f6; }
         body { font-family: 'Tajawal', sans-serif; background: var(--gray); margin: 0; color: #333; }
         
         #loginOverlay { position: fixed; inset: 0; background: linear-gradient(135deg, var(--blue) 0%, #001a33 100%); z-index: 9999; display: flex; align-items: center; justify-content: center; }
@@ -47,17 +45,8 @@
         #legalDisclaimer { display: none; margin-top: 25px; padding: 10px; border-top: 1px solid #000; font-size: 0.85rem; line-height: 1.5; }
         #printSignaturesWrapper { display: none; margin-top: 30px; width: 100%; gap: 20px; }
 
-        /* ستايل زر الإكسيل الجديد */
-        .btn-excel { 
-            background: var(--excel-green); color: white; border: none; padding: 15px 25px; 
-            border-radius: 12px; cursor: pointer; font-weight: bold; display: flex; 
-            align-items: center; justify-content: center; gap: 10px; width: 100%;
-            box-shadow: 0 4px 12px rgba(33, 115, 70, 0.3); transition: all 0.3s;
-        }
-        .btn-excel:hover { background: #1a5c38; transform: translateY(-2px); box-shadow: 0 6px 15px rgba(33, 115, 70, 0.4); }
-
         @media print {
-            .no-print, header, #loginOverlay, .tabs, button, .signature-wrapper, .search-audit-box, .btn-add-item, .btn-remove-item, .search-area, .btn-excel { display: none !important; }
+            .no-print, header, #loginOverlay, .tabs, button, .signature-wrapper, .search-audit-box, .btn-add-item, .btn-remove-item, .search-area { display: none !important; }
             .container { display: block !important; box-shadow: none; width: 100%; border: none; margin: 0; padding: 0; }
             .items-block { border: none; border-bottom: 1px solid #ccc; background: transparent; padding: 10px 0; }
             .print-header { display: flex !important; align-items: center; justify-content: center; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px; }
@@ -183,7 +172,10 @@
     <div id="inventorySection" style="display:none;">
         <div class="search-area no-print">
             <h3 id="lblInventoryTitle" style="margin:0; color:var(--blue);">إدارة المخزن</h3>
-            <button type="button" onclick="document.getElementById('stockForm').reset();" class="btn-blue" style="background:#5bc0de; width: 100px;">New</button>
+            <div style="display:flex; gap:10px;">
+                <button type="button" onclick="document.getElementById('stockForm').reset(); document.getElementById('currentStockDisplay').innerText = '';" class="btn-blue" style="background:#5bc0de; width: 100px;">New</button>
+                <button type="button" onclick="addNewItem()" class="btn-gold" style="width: 150px;">+ صنف / كاتوجري جديد</button>
+            </div>
         </div>
         <form id="stockForm" style="background:#fff; padding:20px; border-radius:12px; border:1px solid #ddd;">
             <div class="grid">
@@ -219,13 +211,6 @@
              <div style="background:#fff; padding:20px; border-radius:10px; border-bottom:5px solid var(--blue);"><h3 id="statTotal">إجمالي الأجهزة</h3><p id="totalAssets" style="font-size:2rem; font-weight:bold;">0</p></div>
              <div style="background:#fff; padding:20px; border-radius:10px; border-bottom:5px solid green;"><h3 id="statIssued">خارج (عهدة)</h3><p id="issuedAssets" style="font-size:2rem; font-weight:bold; color:green;">0</p></div>
              <div style="background:#fff; padding:20px; border-radius:10px; border-bottom:5px solid var(--gold);"><h3 id="statStock">داخل (مخزن)</h3><p id="stockAssets" style="font-size:2rem; font-weight:bold; color:var(--gold);">0</p></div>
-        </div>
-
-        <!-- زر تصدير الإكسيل الجديد -->
-        <div class="no-print" style="margin-bottom: 20px;">
-            <button onclick="exportInventoryToExcel()" class="btn-excel">
-                <span>📊</span> تقرير المخازن الشامل (Multi-Sheet Excel)
-            </button>
         </div>
 
         <div class="search-audit-box no-print" style="background:#eef2f3; padding:20px; border-radius:12px; margin-bottom:20px; border-right:8px solid var(--blue);">
@@ -361,78 +346,6 @@
         document.querySelectorAll('.lblStockText').forEach(el => el.innerText = d.stockText);
     }
 
-    // دالة تصدير الإكسيل الاحترافية بنظام التبويبات
-    // دالة تصدير الإكسيل المحدثة لحساب العهد المسلمة بدقة
-function exportInventoryToExcel() {
-    if (!inventoryData || inventoryData.length === 0) {
-        alert(lang === 'ar' ? "لا توجد بيانات لتصديرها" : "No data to export");
-        return;
-    }
-
-    const btn = document.querySelector('.btn-excel');
-    const originalText = btn.innerHTML;
-    btn.innerHTML = "جاري الحساب والتصدير... ⏳";
-    btn.disabled = true;
-
-    // طلب البيانات من السيرفر لضمان دقة أرقام العهد المسلمة
-    fetch(`${SCRIPT_URL}`, { 
-        method: 'POST', 
-        body: JSON.stringify({ action: 'getDashboard' }) 
-    })
-    .then(res => res.json())
-    .then(dashboardData => {
-        const wb = XLSX.utils.book_new();
-        
-        // تجميع الأصناف حسب الكاتوجري
-        const categories = [...new Set(inventoryData.map(item => item.category || "General"))];
-
-        categories.forEach(cat => {
-            const catItems = inventoryData.filter(item => item.category === cat);
-            
-            const sheetData = catItems.map(item => {
-                const inStock = parseInt(item.quantity) || 0;
-                
-                // البحث عن كمية العهدة المسلمة لهذا الصنف تحديداً من بيانات الداشبورد
-                // ملاحظة: قمنا بتعديل المنطق ليربط اسم الصنف بالكميات المسلمة فعلياً
-                let issued = 0;
-                if (dashboardData.itemsBreakdown && dashboardData.itemsBreakdown[item.itemName]) {
-                    issued = dashboardData.itemsBreakdown[item.itemName].issued || 0;
-                } else {
-                    // محاولة بديلة: إذا كان النظام لا يدعم breakdown، نستخدم القيمة المسجلة في inventoryData
-                    issued = parseInt(item.issuedQty) || 0;
-                }
-
-                return {
-                    "التصنيف": item.category,
-                    "اسم الصنف": item.itemName,
-                    "الرصيد المتاح (داخل المخزن)": inStock,
-                    "طبيعة الصنف": item.isConsumable === 'yes' ? 'مستهلك' : 'أصل ثابت (S/N)'
-                };
-            });
-
-            const ws = XLSX.utils.json_to_sheet(sheetData);
-            
-            // ضبط اتجاه الشيت ليكون من اليمين لليسار (اختياري)
-            if(!ws['!cols']) ws['!cols'] = [];
-            ws['!cols'] = sheetData[0] ? Object.keys(sheetData[0]).map(() => ({ wch: 25 })) : [];
-
-            XLSX.utils.book_append_sheet(wb, ws, cat.substring(0, 31));
-        });
-
-        const dateStr = new Date().toLocaleDateString().replace(/\//g, '-');
-        XLSX.writeFile(wb, `UEC_Inventory_Report${dateStr}.xlsx`);
-        
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-    })
-    .catch(err => {
-        console.error(err);
-        alert("حدث خطأ أثناء جلب البيانات الدقيقة");
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-    });
-}
-
     function addItemRow(assetVal = "", snVal = "", specsVal = "") {
         const id = Date.now() + Math.random();
         const container = document.getElementById('itemsContainer');
@@ -497,14 +410,7 @@ function exportInventoryToExcel() {
         if(isConsumable) { snField.style.display = "none"; qtyField.style.display = "block"; snInput.required = false; }
         else { snField.style.display = "block"; qtyField.style.display = "none"; snInput.required = true; }
         const item = inventoryData.find(i => i.itemName === selected);
-        if(item) { 
-            stockContainer.style.visibility = "visible"; 
-            stockSpan.innerText = item.quantity; 
-            stockSpan.style.color = item.quantity < 3 ? "red" : "inherit";
-            if(item.quantity < 3) {
-                alert(lang === 'ar' ? `تنبيه: الصنف [${selected}] وصل للحد الأدنى! المتبقي: ${item.quantity}` : `Warning: Item [${selected}] reached minimum limit! Remaining: ${item.quantity}`);
-            }
-        }
+        if(item) { stockContainer.style.visibility = "visible"; stockSpan.innerText = item.quantity; stockSpan.style.color = item.quantity < 3 ? "red" : "inherit"; }
     }
 
     function filterAssetsByCategory() {
@@ -576,9 +482,21 @@ function exportInventoryToExcel() {
         }
     }
 
+    function addNewItem() {
+        document.getElementById('stockForm').reset();
+        document.getElementById('currentStockDisplay').innerText = "";
+        const promptMsg = lang === 'ar' ? "أدخل اسم الصنف الجديد:" : "Enter new item name:";
+        const newItem = prompt(promptMsg);
+        if(newItem) {
+            document.getElementById('stkItemName').value = newItem;
+            document.getElementById('stkCategory').focus();
+        }
+    }
+
     function saveStock() {
         const itemName = document.getElementById('stkItemName').value;
         const newQty = parseInt(document.getElementById('stkQty').value);
+
         const payload = {
             action: 'updateStock',
             category: document.getElementById('stkCategory').value,
@@ -586,7 +504,9 @@ function exportInventoryToExcel() {
             newQty: newQty,
             isConsumable: document.getElementById('stkConsumable').value
         };
+
         if(!payload.category || !payload.itemName || isNaN(newQty)) return alert(lang === 'ar' ? "يرجى ملء جميع الخانات بشكل صحيح" : "Please fill all fields correctly");
+        
         const btn = document.getElementById('btnSaveStock');
         btn.disabled = true; btn.innerText = "...";
         fetch(`${SCRIPT_URL}`, { method: 'POST', body: JSON.stringify(payload) })
