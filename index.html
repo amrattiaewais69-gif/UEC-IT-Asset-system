@@ -168,6 +168,7 @@
         </form>
     </div>
 
+    <!-- Inventory Management Section -->
     <div id="inventorySection" style="display:none;">
         <div class="search-area no-print">
             <h3 id="lblInventoryTitle" style="margin:0; color:var(--blue);">إدارة المخزن</h3>
@@ -186,7 +187,7 @@
                     <datalist id="itemOptions"></datalist>
                 </div>
                 <div>
-                    <label id="lblStkQty">الكمية الجديدة (لإضافتها للرصيد)</label>
+                    <label id="lblStkQty">الكمية الجديدة</label>
                     <input type="number" id="stkQty" placeholder="0" required min="1">
                     <div id="currentStockDisplay" style="font-size: 0.75rem; color: var(--blue); margin-top: 5px; font-weight: bold;"></div>
                 </div>
@@ -272,7 +273,7 @@
             thDate: "التاريخ", thAsset: "الجهاز", thSelect: "اختيار", thAdmin: "الأدمن", thType: "النوع",
             stockText: "الرصيد المتاح:", category: "التصنيف", qty: "الكمية",
             invTitle: "إدارة المخزن", stkCat: "الكاتوجري (Category)", stkItem: "اسم الصنف (Item Name)", 
-            stkQty: "الكمية المضافة", stkCons: "هل الصنف مستهلك؟ (Consumable)", optNo: "لا (جهاز له S/N)", 
+            stkQty: "الكمية الجديدة", stkCons: "هل الصنف مستهلك؟ (Consumable)", optNo: "لا (جهاز له S/N)", 
             optYes: "نعم (مثل الأقلام/الأوراق)", btnStkSave: "تحديث المخزون"
         },
         en: { 
@@ -286,7 +287,7 @@
             thDate: "Date", thAsset: "Asset", thSelect: "Select", thAdmin: "Admin", thType: "Type",
             stockText: "Current Stock:", category: "Category", qty: "Quantity",
             invTitle: "Inventory Management", stkCat: "Category", stkItem: "Item Name", 
-            stkQty: "Quantity to Add", stkCons: "Consumable?", optNo: "No (Device with S/N)", 
+            stkQty: "New Quantity", stkCons: "Consumable?", optNo: "No (Device with S/N)", 
             optYes: "Yes (e.g. Pens/Paper)", btnStkSave: "Update Stock"
         }
     };
@@ -450,10 +451,8 @@
             inventoryData = Array.isArray(data) ? data : (data.inventory || []); 
             const catSelect = document.getElementById('categoryList');
             const uniqueCats = [...new Set(inventoryData.map(i => i.category))].filter(c => c && c !== "");
-            
             document.getElementById('catOptions').innerHTML = uniqueCats.map(c => `<option value="${c}">`).join('');
             filterInventoryItems();
-
             catSelect.innerHTML = `<option value="">${lang === 'ar' ? 'كل التصنيفات' : 'All Categories'}</option>` + 
                 uniqueCats.map(c => `<option value="${c}">${c}</option>`).join('');
             if(document.querySelectorAll('.items-block').length === 0) addItemRow();
@@ -480,36 +479,32 @@
         }
     }
 
+    // التعديل المطلوب: إرسال الكمية المكتوبة فقط
     function saveStock() {
-    const itemName = document.getElementById('stkItemName').value;
-    const qtyToAdd = parseInt(document.getElementById('stkQty').value) || 0; // الكمية المكتوبة فقط
-    
-    const payload = {
-        action: 'updateStock',
-        category: document.getElementById('stkCategory').value,
-        itemName: itemName,
-        addedQty: qtyToAdd, // نرسل الـ 3 فقط
-        isConsumable: document.getElementById('stkConsumable').value
-    };
+        const itemName = document.getElementById('stkItemName').value;
+        const newQty = parseInt(document.getElementById('stkQty').value); // نأخذ القيمة كما هي
 
-    if(!payload.category || !payload.itemName || qtyToAdd <= 0) return alert("يرجى ملء البيانات");
-    
-    // تكملة الكود (fetch)...
-}
-    fetch(`${SCRIPT_URL}`, { method: 'POST', body: JSON.stringify(payload) })
-    .then(res => res.text()).then(() => {
-        alert(lang === 'ar' ? "تم تحديث المخزون بنجاح!" : "Stock Updated Successfully!");
-        document.getElementById('stockForm').reset();
-        document.getElementById('currentStockDisplay').innerText = "";
-        getInventoryList(); // تحديث القائمة المحلية فوراً
-        btn.disabled = false; 
-        btn.innerText = translations[lang].btnStkSave;
-    }).catch(err => {
-        console.error(err);
-        btn.disabled = false;
-        btn.innerText = translations[lang].btnStkSave;
-    });
-}
+        const payload = {
+            action: 'updateStock',
+            category: document.getElementById('stkCategory').value,
+            itemName: itemName,
+            newQty: newQty, // نرسل القيمة المكتوبة فقط
+            isConsumable: document.getElementById('stkConsumable').value
+        };
+
+        if(!payload.category || !payload.itemName || isNaN(newQty)) return alert(lang === 'ar' ? "يرجى ملء جميع الخانات بشكل صحيح" : "Please fill all fields correctly");
+        
+        const btn = document.getElementById('btnSaveStock');
+        btn.disabled = true; btn.innerText = "...";
+        fetch(`${SCRIPT_URL}`, { method: 'POST', body: JSON.stringify(payload) })
+        .then(res => res.text()).then(() => {
+            alert(lang === 'ar' ? "تم تحديث المخزون بنجاح!" : "Stock Updated Successfully!");
+            document.getElementById('stockForm').reset();
+            document.getElementById('currentStockDisplay').innerText = "";
+            getInventoryList();
+            btn.disabled = false; btn.innerText = translations[lang].btnStkSave;
+        });
+    }
 
     function searchEmployee() {
         const empID = document.getElementById('searchID').value;
@@ -552,9 +547,7 @@
             document.getElementById('auditIssuedCount').innerText = data.stats.issued;
             document.getElementById('auditReturnedCount').innerText = data.stats.returned;
             document.getElementById('auditHistoryBody').innerHTML = data.history.map(h => `<tr><td>${new Date(h.date).toLocaleDateString()}</td><td style="color:${h.type.includes('Issue')?'green':'red'}">${h.type}</td><td>${h.asset}</td><td>${h.sn}</td><td>${h.admin}</td></tr>`).join('');
-            if(data.signature) {
-                document.getElementById('auditSignatureImg').src = data.signature;
-            }
+            if(data.signature) { document.getElementById('auditSignatureImg').src = data.signature; }
         });
     }
 
@@ -640,7 +633,6 @@
         document.getElementById('formSection').style.display = t === 'form' ? 'block' : 'none';
         document.getElementById('inventorySection').style.display = t === 'inventory' ? 'block' : 'none';
         document.getElementById('dashSection').style.display = t === 'dash' ? 'block' : 'none';
-        
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         if(t === 'form') document.getElementById('formTab').classList.add('active');
         if(t === 'inventory') document.getElementById('inventoryTab').classList.add('active');
