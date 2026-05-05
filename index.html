@@ -362,44 +362,78 @@
     }
 
     // دالة تصدير الإكسيل الاحترافية بنظام التبويبات
-    function exportInventoryToExcel() {
-        if (!inventoryData || inventoryData.length === 0) {
-            alert(lang === 'ar' ? "لا توجد بيانات لتصديرها" : "No data to export");
-            return;
-        }
+    // دالة تصدير الإكسيل المحدثة لحساب العهد المسلمة بدقة
+function exportInventoryToExcel() {
+    if (!inventoryData || inventoryData.length === 0) {
+        alert(lang === 'ar' ? "لا توجد بيانات لتصديرها" : "No data to export");
+        return;
+    }
 
+    const btn = document.querySelector('.btn-excel');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = "جاري الحساب والتصدير... ⏳";
+    btn.disabled = true;
+
+    // طلب البيانات من السيرفر لضمان دقة أرقام العهد المسلمة
+    fetch(`${SCRIPT_URL}`, { 
+        method: 'POST', 
+        body: JSON.stringify({ action: 'getDashboard' }) 
+    })
+    .then(res => res.json())
+    .then(dashboardData => {
         const wb = XLSX.utils.book_new();
         
-        // تجميع البيانات حسب الكاتوجري
+        // تجميع الأصناف حسب الكاتوجري
         const categories = [...new Set(inventoryData.map(item => item.category || "General"))];
 
         categories.forEach(cat => {
             const catItems = inventoryData.filter(item => item.category === cat);
             
-            // تجهيز البيانات داخل الـ Sheet
             const sheetData = catItems.map(item => {
                 const inStock = parseInt(item.quantity) || 0;
-                const issued = parseInt(item.issuedQty) || 0;
+                
+                // البحث عن كمية العهدة المسلمة لهذا الصنف تحديداً من بيانات الداشبورد
+                // ملاحظة: قمنا بتعديل المنطق ليربط اسم الصنف بالكميات المسلمة فعلياً
+                let issued = 0;
+                if (dashboardData.itemsBreakdown && dashboardData.itemsBreakdown[item.itemName]) {
+                    issued = dashboardData.itemsBreakdown[item.itemName].issued || 0;
+                } else {
+                    // محاولة بديلة: إذا كان النظام لا يدعم breakdown، نستخدم القيمة المسجلة في inventoryData
+                    issued = parseInt(item.issuedQty) || 0;
+                }
+
                 return {
-                    "الكاتوجري": item.category,
+                    "التصنيف": item.category,
                     "اسم الصنف": item.itemName,
-                    "العدد بالمخزن": inStock,
-                    "العدد المسلم (عهدة)": issued,
-                    "إجمالي العدد الكلي": inStock + issued,
-                    "نوع الصنف": item.isConsumable === 'yes' ? 'مستهلك' : 'جهاز ثابت'
+                    "الرصيد المتاح (داخل المخزن)": inStock,
+                    "العهدة المستلمة (خارج المخزن)": issued,
+                    "إجمالي الأصول": inStock + issued,
+                    "طبيعة الصنف": item.isConsumable === 'yes' ? 'مستهلك' : 'أصل ثابت (S/N)'
                 };
             });
 
             const ws = XLSX.utils.json_to_sheet(sheetData);
             
-            // إضافة التنسيقات البسيطة للرأس
-            XLSX.utils.book_append_sheet(wb, ws, cat.substring(0, 31)); // اسم التابة لا يتعدى 31 حرف
+            // ضبط اتجاه الشيت ليكون من اليمين لليسار (اختياري)
+            if(!ws['!cols']) ws['!cols'] = [];
+            ws['!cols'] = sheetData[0] ? Object.keys(sheetData[0]).map(() => ({ wch: 25 })) : [];
+
+            XLSX.utils.book_append_sheet(wb, ws, cat.substring(0, 31));
         });
 
-        // إنشاء اسم الملف مع التاريخ
         const dateStr = new Date().toLocaleDateString().replace(/\//g, '-');
-        XLSX.writeFile(wb, `UEC_Inventory_Report_${dateStr}.xlsx`);
-    }
+        XLSX.writeFile(wb, `UEC_Inventory_Report${dateStr}.xlsx`);
+        
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    })
+    .catch(err => {
+        console.error(err);
+        alert("حدث خطأ أثناء جلب البيانات الدقيقة");
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    });
+}
 
     function addItemRow(assetVal = "", snVal = "", specsVal = "") {
         const id = Date.now() + Math.random();
