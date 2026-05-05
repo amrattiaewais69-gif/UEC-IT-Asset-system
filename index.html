@@ -479,16 +479,15 @@
         }
     }
 
-    // التعديل المطلوب: إرسال الكمية المكتوبة فقط
     function saveStock() {
         const itemName = document.getElementById('stkItemName').value;
-        const newQty = parseInt(document.getElementById('stkQty').value); // نأخذ القيمة كما هي
+        const newQty = parseInt(document.getElementById('stkQty').value);
 
         const payload = {
             action: 'updateStock',
             category: document.getElementById('stkCategory').value,
             itemName: itemName,
-            newQty: newQty, // نرسل القيمة المكتوبة فقط
+            newQty: newQty,
             isConsumable: document.getElementById('stkConsumable').value
         };
 
@@ -584,9 +583,19 @@
             newSignature: newSignaturePad.toDataURL()
         };
         fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) })
-        .then(res => res.text()).then(t => {
-            alert(lang === 'ar' ? "تم حفظ جميع العمليات!" : "All items saved!");
-            resetForm(); getInventoryList(); btn.disabled = false; btn.innerText = translations[lang].save;
+        .then(res => res.json()).then(res => {
+            if(res.status === "success") {
+                alert(lang === 'ar' ? "تم حفظ جميع العمليات بنجاح!" : "All items saved successfully!");
+                // فحص وجود تنبيهات نقص المخزون
+                if (res.alerts && res.alerts.length > 0) {
+                    let msg = (lang === 'ar' ? "⚠️ تنبيه: نقص في المخزون للأصناف التالية:\n" : "⚠️ Stock Alert for the following items:\n") + res.alerts.join("\n");
+                    alert(msg);
+                }
+                resetForm(); getInventoryList(); 
+            } else {
+                alert("Error: " + res.message);
+            }
+            btn.disabled = false; btn.innerText = translations[lang].save;
         });
     };
 
