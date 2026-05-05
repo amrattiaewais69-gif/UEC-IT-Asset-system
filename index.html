@@ -482,32 +482,20 @@
 
     function saveStock() {
     const itemName = document.getElementById('stkItemName').value;
-    const addQtyInput = document.getElementById('stkQty').value;
+    const qtyToAdd = parseInt(document.getElementById('stkQty').value) || 0; // الكمية المكتوبة فقط
     
-    // تحويل المدخلات لأرقام صحيحة لضمان دقة العملية الحسابية
-    const addQty = parseInt(addQtyInput) || 0;
-    const existingItem = inventoryData.find(i => i.itemName === itemName);
-    
-    // التأكد من تحويل الكمية القديمة لرقم قبل الجمع
-    const currentQty = existingItem ? parseInt(existingItem.quantity) || 0 : 0;
-    const totalQty = currentQty + addQty;
-
     const payload = {
         action: 'updateStock',
         category: document.getElementById('stkCategory').value,
         itemName: itemName,
-        newQty: totalQty, // إرسال الإجمالي النهائي المحسوب بدقة
+        addedQty: qtyToAdd, // نرسل الـ 3 فقط
         isConsumable: document.getElementById('stkConsumable').value
     };
 
-    if(!payload.category || !payload.itemName || addQty <= 0) {
-        return alert(lang === 'ar' ? "يرجى ملء جميع الخانات بشكل صحيح" : "Please fill all fields correctly");
-    }
+    if(!payload.category || !payload.itemName || qtyToAdd <= 0) return alert("يرجى ملء البيانات");
     
-    const btn = document.getElementById('btnSaveStock');
-    btn.disabled = true; 
-    btn.innerText = "...";
-
+    // تكملة الكود (fetch)...
+}
     fetch(`${SCRIPT_URL}`, { method: 'POST', body: JSON.stringify(payload) })
     .then(res => res.text()).then(() => {
         alert(lang === 'ar' ? "تم تحديث المخزون بنجاح!" : "Stock Updated Successfully!");
