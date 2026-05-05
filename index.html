@@ -6,8 +6,10 @@
     <title>UEC Assets Control</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+    <!-- مكتبة تصدير الإكسيل -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        :root { --blue: #003366; --gold: #C5A059; --white: #ffffff; --gray: #f4f7f6; }
+        :root { --blue: #003366; --gold: #C5A059; --white: #ffffff; --gray: #f4f7f6; --excel-green: #217346; }
         body { font-family: 'Tajawal', sans-serif; background: var(--gray); margin: 0; color: #333; }
         
         #loginOverlay { position: fixed; inset: 0; background: linear-gradient(135deg, var(--blue) 0%, #001a33 100%); z-index: 9999; display: flex; align-items: center; justify-content: center; }
@@ -45,8 +47,17 @@
         #legalDisclaimer { display: none; margin-top: 25px; padding: 10px; border-top: 1px solid #000; font-size: 0.85rem; line-height: 1.5; }
         #printSignaturesWrapper { display: none; margin-top: 30px; width: 100%; gap: 20px; }
 
+        /* ستايل زر الإكسيل الجديد */
+        .btn-excel { 
+            background: var(--excel-green); color: white; border: none; padding: 15px 25px; 
+            border-radius: 12px; cursor: pointer; font-weight: bold; display: flex; 
+            align-items: center; justify-content: center; gap: 10px; width: 100%;
+            box-shadow: 0 4px 12px rgba(33, 115, 70, 0.3); transition: all 0.3s;
+        }
+        .btn-excel:hover { background: #1a5c38; transform: translateY(-2px); box-shadow: 0 6px 15px rgba(33, 115, 70, 0.4); }
+
         @media print {
-            .no-print, header, #loginOverlay, .tabs, button, .signature-wrapper, .search-audit-box, .btn-add-item, .btn-remove-item, .search-area { display: none !important; }
+            .no-print, header, #loginOverlay, .tabs, button, .signature-wrapper, .search-audit-box, .btn-add-item, .btn-remove-item, .search-area, .btn-excel { display: none !important; }
             .container { display: block !important; box-shadow: none; width: 100%; border: none; margin: 0; padding: 0; }
             .items-block { border: none; border-bottom: 1px solid #ccc; background: transparent; padding: 10px 0; }
             .print-header { display: flex !important; align-items: center; justify-content: center; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px; }
@@ -210,6 +221,13 @@
              <div style="background:#fff; padding:20px; border-radius:10px; border-bottom:5px solid var(--gold);"><h3 id="statStock">داخل (مخزن)</h3><p id="stockAssets" style="font-size:2rem; font-weight:bold; color:var(--gold);">0</p></div>
         </div>
 
+        <!-- زر تصدير الإكسيل الجديد -->
+        <div class="no-print" style="margin-bottom: 20px;">
+            <button onclick="exportInventoryToExcel()" class="btn-excel">
+                <span>📊</span> تصدير تقرير المخازن الشامل (Multi-Sheet Excel)
+            </button>
+        </div>
+
         <div class="search-audit-box no-print" style="background:#eef2f3; padding:20px; border-radius:12px; margin-bottom:20px; border-right:8px solid var(--blue);">
             <h4 id="lblAuditTitle" style="margin:0 0 10px 0; color:var(--blue);">🔍 استعلام عن سجل موظف:</h4>
             <div style="display:flex; gap:10px;">
@@ -343,6 +361,46 @@
         document.querySelectorAll('.lblStockText').forEach(el => el.innerText = d.stockText);
     }
 
+    // دالة تصدير الإكسيل الاحترافية بنظام التبويبات
+    function exportInventoryToExcel() {
+        if (!inventoryData || inventoryData.length === 0) {
+            alert(lang === 'ar' ? "لا توجد بيانات لتصديرها" : "No data to export");
+            return;
+        }
+
+        const wb = XLSX.utils.book_new();
+        
+        // تجميع البيانات حسب الكاتوجري
+        const categories = [...new Set(inventoryData.map(item => item.category || "General"))];
+
+        categories.forEach(cat => {
+            const catItems = inventoryData.filter(item => item.category === cat);
+            
+            // تجهيز البيانات داخل الـ Sheet
+            const sheetData = catItems.map(item => {
+                const inStock = parseInt(item.quantity) || 0;
+                const issued = parseInt(item.issuedQty) || 0;
+                return {
+                    "الكاتوجري": item.category,
+                    "اسم الصنف": item.itemName,
+                    "العدد بالمخزن": inStock,
+                    "العدد المسلم (عهدة)": issued,
+                    "إجمالي العدد الكلي": inStock + issued,
+                    "نوع الصنف": item.isConsumable === 'yes' ? 'مستهلك' : 'جهاز ثابت'
+                };
+            });
+
+            const ws = XLSX.utils.json_to_sheet(sheetData);
+            
+            // إضافة التنسيقات البسيطة للرأس
+            XLSX.utils.book_append_sheet(wb, ws, cat.substring(0, 31)); // اسم التابة لا يتعدى 31 حرف
+        });
+
+        // إنشاء اسم الملف مع التاريخ
+        const dateStr = new Date().toLocaleDateString().replace(/\//g, '-');
+        XLSX.writeFile(wb, `UEC_Inventory_Report_${dateStr}.xlsx`);
+    }
+
     function addItemRow(assetVal = "", snVal = "", specsVal = "") {
         const id = Date.now() + Math.random();
         const container = document.getElementById('itemsContainer');
@@ -411,7 +469,6 @@
             stockContainer.style.visibility = "visible"; 
             stockSpan.innerText = item.quantity; 
             stockSpan.style.color = item.quantity < 3 ? "red" : "inherit";
-            // Alert if stock is low
             if(item.quantity < 3) {
                 alert(lang === 'ar' ? `تنبيه: الصنف [${selected}] وصل للحد الأدنى! المتبقي: ${item.quantity}` : `Warning: Item [${selected}] reached minimum limit! Remaining: ${item.quantity}`);
             }
@@ -490,7 +547,6 @@
     function saveStock() {
         const itemName = document.getElementById('stkItemName').value;
         const newQty = parseInt(document.getElementById('stkQty').value);
-
         const payload = {
             action: 'updateStock',
             category: document.getElementById('stkCategory').value,
@@ -498,9 +554,7 @@
             newQty: newQty,
             isConsumable: document.getElementById('stkConsumable').value
         };
-
         if(!payload.category || !payload.itemName || isNaN(newQty)) return alert(lang === 'ar' ? "يرجى ملء جميع الخانات بشكل صحيح" : "Please fill all fields correctly");
-        
         const btn = document.getElementById('btnSaveStock');
         btn.disabled = true; btn.innerText = "...";
         fetch(`${SCRIPT_URL}`, { method: 'POST', body: JSON.stringify(payload) })
