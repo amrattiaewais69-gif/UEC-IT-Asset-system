@@ -406,8 +406,6 @@ function exportInventoryToExcel() {
                     "التصنيف": item.category,
                     "اسم الصنف": item.itemName,
                     "الرصيد المتاح (داخل المخزن)": inStock,
-                    "العهدة المستلمة (خارج المخزن)": issued,
-                    "إجمالي الأصول": inStock + issued,
                     "طبيعة الصنف": item.isConsumable === 'yes' ? 'مستهلك' : 'أصل ثابت (S/N)'
                 };
             });
