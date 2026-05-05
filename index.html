@@ -407,7 +407,19 @@
         if(isConsumable) { snField.style.display = "none"; qtyField.style.display = "block"; snInput.required = false; }
         else { snField.style.display = "block"; qtyField.style.display = "none"; snInput.required = true; }
         const item = inventoryData.find(i => i.itemName === selected);
-        if(item) { stockContainer.style.visibility = "visible"; stockSpan.innerText = item.quantity; stockSpan.style.color = item.quantity < 3 ? "red" : "inherit"; }
+        if(item) {
+            stockContainer.style.visibility = "visible";
+            stockSpan.innerText = item.quantity;
+            stockSpan.style.color = item.quantity < 3 ? "red" : "inherit";
+            
+            // إضافة التنبيه المطلوب عند الوصول للحد الأدنى
+            if (item.quantity <= 3) {
+                const msg = lang === 'ar' ? 
+                    `تنبيه: الصنف (${selected}) قارب على النفاذ! الرصيد المتبقي: ${item.quantity}` : 
+                    `Alert: Item (${selected}) is low in stock! Remaining: ${item.quantity}`;
+                alert(msg);
+            }
+        }
     }
 
     function filterAssetsByCategory() {
@@ -583,19 +595,9 @@
             newSignature: newSignaturePad.toDataURL()
         };
         fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) })
-        .then(res => res.json()).then(res => {
-            if(res.status === "success") {
-                alert(lang === 'ar' ? "تم حفظ جميع العمليات بنجاح!" : "All items saved successfully!");
-                // فحص وجود تنبيهات نقص المخزون
-                if (res.alerts && res.alerts.length > 0) {
-                    let msg = (lang === 'ar' ? "⚠️ تنبيه: نقص في المخزون للأصناف التالية:\n" : "⚠️ Stock Alert for the following items:\n") + res.alerts.join("\n");
-                    alert(msg);
-                }
-                resetForm(); getInventoryList(); 
-            } else {
-                alert("Error: " + res.message);
-            }
-            btn.disabled = false; btn.innerText = translations[lang].save;
+        .then(res => res.text()).then(t => {
+            alert(lang === 'ar' ? "تم حفظ جميع العمليات!" : "All items saved!");
+            resetForm(); getInventoryList(); btn.disabled = false; btn.innerText = translations[lang].save;
         });
     };
 
