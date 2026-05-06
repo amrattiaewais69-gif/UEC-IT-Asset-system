@@ -496,21 +496,26 @@
     }
 
     // الدالة الجديدة لإضافة الكاتوجري مباشرة
-    function addNewCategoryPrompt() {
-        const promptMsg = lang === 'ar' ? "أدخل اسم الكاتوجري الجديدة:" : "Enter new category name:";
-        const newCat = prompt(promptMsg);
-        if(newCat) {
-            fetch(`${SCRIPT_URL}`, { 
-                method: 'POST', 
-                body: JSON.stringify({ action: 'addNewCategory', category: newCat }) 
-            })
-            .then(res => res.text()).then(() => {
-                alert(lang === 'ar' ? "تمت إضافة الكاتوجري بنجاح!" : "Category Added Successfully!");
-                getInventoryList();
-            });
-        }
+    function addNewCategory() {
+    const newCat = prompt("أدخل اسم القسم الجديد:");
+    if (newCat) {
+        const categorySelect = document.getElementById('categorySelect'); // تأكد من ID القائمة عندك
+        
+        // 1. إضافة القسم للقائمة المنسدلة فوراً أمام المستخدم
+        const option = document.createElement('option');
+        option.value = newCat;
+        option.text = newCat;
+        categorySelect.add(option);
+        
+        // 2. اختيار القسم الجديد تلقائياً
+        categorySelect.value = newCat;
+        
+        // 3. تنبيه المستخدم لإضافة أول صنف
+        alert("تم إضافة القسم " + newCat + " للقائمة. يرجى الآن إدخال بيانات أول صنف وحفظه ليتم تسجيل القسم نهائياً.");
+        
+        // ملاحظة: لن نرسل أي بيانات للسيرفر هنا، الحفظ سيتم مع أول صنف
     }
-
+}
     function saveStock() {
         const itemName = document.getElementById('stkItemName').value;
         const newQty = parseInt(document.getElementById('stkQty').value);
