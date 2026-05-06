@@ -32,7 +32,7 @@
         
         .items-block { border: 1px solid #ddd; padding: 15px; border-radius: 10px; margin-bottom: 15px; background: #fafafa; position: relative; }
         .btn-add-item { background: var(--gold); color: var(--blue); border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-bottom: 15px; }
-        .btn-remove-item { background: #d9534f; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: position: absolute; top: 10px; left: 10px; font-size: 0.7rem; }
+        .btn-remove-item { background: #d9534f; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; position: absolute; top: 10px; left: 10px; font-size: 0.7rem; }
 
         .signature-wrapper { border: 2px dashed #bbb; background: #fdfdfd; height: 140px; position: relative; margin: 5px 0; border-radius: 8px; }
         canvas { width: 100%; height: 100%; }
@@ -216,10 +216,11 @@
 
         <div class="search-audit-box no-print" style="background:#eef2f3; padding:20px; border-radius:12px; margin-bottom:20px; border-right:8px solid var(--blue);">
             <h4 id="lblAuditTitle" style="margin:0 0 10px 0; color:var(--blue);">🔍 استعلام عن سجل موظف:</h4>
-            <div style="display:flex; gap:10px;">
-                <input type="text" id="dashSearchID" placeholder="أدخل ID الموظف هنا..." style="margin-bottom:0;">
+            <div style="display:flex; gap:10px; flex-wrap: wrap;">
+                <input type="text" id="dashSearchID" placeholder="أدخل ID الموظف هنا..." style="margin-bottom:0; width: 200px;">
                 <button onclick="auditEmployee()" class="btn-gold" id="btnAudit" style="width:150px;">بحث شامل</button>
                 <button onclick="printAuditHistory()" class="btn-blue" id="btnPrintAudit" style="display:none; background:#28a745;">طباعة السجل</button>
+                <button onclick="exportInventoryToExcel()" class="btn-blue" id="btnExportStock" style="background:#1D6F42; display: inline-block;">تصدير جرد المخزن (Excel)</button>
             </div>
         </div>
 
@@ -456,7 +457,6 @@
             const catSelect = document.getElementById('categoryList');
             const uniqueCats = [...new Set(inventoryData.map(i => i.category))].filter(c => c && c !== "");
             
-            // تحديث خيارات الكاتوجري في datalist و select
             const catOptions = document.getElementById('catOptions');
             catOptions.innerHTML = uniqueCats.map(c => `<option value="${c}">`).join('');
             
@@ -503,7 +503,6 @@
         const promptMsg = lang === 'ar' ? "أدخل اسم القسم الجديد (Category):" : "Enter new Category name:";
         const newCat = prompt(promptMsg);
         if(newCat) {
-            // تحديث القائمة فوراً برمجياً
             const catOptions = document.getElementById('catOptions');
             const newOpt = document.createElement('option');
             newOpt.value = newCat;
@@ -597,6 +596,20 @@
         document.getElementById('printPageTitle').innerText = "Employee Asset History | سجل عهدة موظف";
         document.getElementById('auditPrintSignature').style.display = "block";
         setTimeout(() => { window.print(); document.getElementById('auditPrintSignature').style.display = "none"; }, 500);
+    }
+
+    function exportInventoryToExcel() {
+        const btn = document.getElementById('btnExportStock');
+        const originalText = btn.innerText;
+        btn.disabled = true;
+        btn.innerText = lang === 'ar' ? "جاري التجهيز..." : "Preparing...";
+        google.script.run.withSuccessHandler(function(url) {
+            btn.disabled = false;
+            btn.innerText = originalText;
+            if (url) { window.open(url, '_blank'); } else { alert(lang === 'ar' ? "فشل في إنشاء الملف" : "Failed to generate file"); }
+        }).withFailureHandler(function(err) {
+            btn.disabled = false; btn.innerText = originalText; alert("Error: " + err);
+        }).exportStockToExcel();
     }
 
     document.getElementById('assetForm').onsubmit = function(e) {
