@@ -220,7 +220,6 @@
                 <input type="text" id="dashSearchID" placeholder="أدخل ID الموظف هنا..." style="margin-bottom:0;">
                 <button onclick="auditEmployee()" class="btn-gold" id="btnAudit" style="width:150px;">بحث شامل</button>
                 <button onclick="printAuditHistory()" class="btn-blue" id="btnPrintAudit" style="display:none; background:#28a745;">طباعة السجل</button>
-                <button onclick="exportFullInventory()" class="btn-blue" id="btnExportInv" style="background:#1d6f42;">تصدير جرد المخزن</button>
             </div>
         </div>
 
@@ -279,8 +278,7 @@
             stockText: "الرصيد المتاح:", category: "التصنيف", qty: "الكمية",
             invTitle: "إدارة المخزن", stkCat: "الكاتوجري (Category)", stkItem: "اسم الصنف (Item Name)", 
             stkQty: "الكمية الجديدة", stkCons: "هل الصنف مستهلك؟ (Consumable)", optNo: "لا (جهاز له S/N)", 
-            optYes: "نعم (مثل الأقلام/الأوراق)", btnStkSave: "تحديث المخزون",
-            btnExport: "تصدير جرد المخزن"
+            optYes: "نعم (مثل الأقلام/الأوراق)", btnStkSave: "تحديث المخزون"
         },
         en: { 
             formTab: "Forms", inventoryTab: "Stock", dashTab: "Statistics", searchPlace: "Employee ID to search...", btnSearch: "Search", 
@@ -294,8 +292,7 @@
             stockText: "Current Stock:", category: "Category", qty: "Quantity",
             invTitle: "Inventory Management", stkCat: "Category", stkItem: "Item Name", 
             stkQty: "New Quantity", stkCons: "Consumable?", optNo: "No (Device with S/N)", 
-            optYes: "Yes (e.g. Pens/Paper)", btnStkSave: "Update Stock",
-            btnExport: "Export Inventory Stock"
+            optYes: "Yes (e.g. Pens/Paper)", btnStkSave: "Update Stock"
         }
     };
 
@@ -336,7 +333,6 @@
         document.getElementById('optNo').innerText = d.optNo;
         document.getElementById('optYes').innerText = d.optYes;
         document.getElementById('btnSaveStock').innerText = d.btnStkSave;
-        document.getElementById('btnExportInv').innerText = d.btnExport;
 
         ["thDate","thDat","thT1"].forEach(id => document.getElementById(id).innerText = d.thDate);
         ["thAsset","thDev","thT3"].forEach(id => document.getElementById(id).innerText = d.thAsset);
@@ -460,6 +456,7 @@
             const catSelect = document.getElementById('categoryList');
             const uniqueCats = [...new Set(inventoryData.map(i => i.category))].filter(c => c && c !== "");
             
+            // تحديث خيارات الكاتوجري في datalist و select
             const catOptions = document.getElementById('catOptions');
             catOptions.innerHTML = uniqueCats.map(c => `<option value="${c}">`).join('');
             
@@ -506,6 +503,7 @@
         const promptMsg = lang === 'ar' ? "أدخل اسم القسم الجديد (Category):" : "Enter new Category name:";
         const newCat = prompt(promptMsg);
         if(newCat) {
+            // تحديث القائمة فوراً برمجياً
             const catOptions = document.getElementById('catOptions');
             const newOpt = document.createElement('option');
             newOpt.value = newCat;
@@ -599,35 +597,6 @@
         document.getElementById('printPageTitle').innerText = "Employee Asset History | سجل عهدة موظف";
         document.getElementById('auditPrintSignature').style.display = "block";
         setTimeout(() => { window.print(); document.getElementById('auditPrintSignature').style.display = "none"; }, 500);
-    }
-
-    /** تصدير جرد المخزن بالكامل إلى إكسيل **/
-    function exportFullInventory() {
-        const btn = document.getElementById('btnExportInv');
-        const originalText = btn.innerText;
-        btn.disabled = true;
-        btn.innerText = lang === 'ar' ? "جاري التجهيز..." : "Exporting...";
-        
-        fetch(SCRIPT_URL, { 
-            method: 'POST', 
-            body: JSON.stringify({ action: 'exportInventoryToExcel' }) 
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.status === "success") {
-                window.open(data.url, '_blank');
-            } else {
-                alert("Error: " + data.message);
-            }
-            btn.disabled = false;
-            btn.innerText = originalText;
-        })
-        .catch(err => {
-            console.error(err);
-            alert(lang === 'ar' ? "حدث خطأ في الاتصال" : "Connection error");
-            btn.disabled = false;
-            btn.innerText = originalText;
-        });
     }
 
     document.getElementById('assetForm').onsubmit = function(e) {
