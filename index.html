@@ -220,7 +220,8 @@
                 <input type="text" id="dashSearchID" placeholder="أدخل ID الموظف هنا..." style="margin-bottom:0; flex:1; min-width: 200px;">
                 <button onclick="auditEmployee()" class="btn-gold" id="btnAudit" style="width:120px;">بحث شامل</button>
                 <button onclick="printAuditHistory()" class="btn-blue" id="btnPrintAudit" style="display:none; background:#28a745; width:120px;">طباعة السجل</button>
-                <button type="button" onclick="exportInventoryToExcel()" class="btn-blue" id="btnExportStock" style="background:#1D6F42; width:160px;">تصدير جرد المخزن</button>
+                <!-- الزر المطلوب تعديله -->
+                <button type="button" onclick="handleExportClick()" class="btn-blue" id="btnExportStock" style="background:#1D6F42; width:160px;">تصدير جرد المخزن</button>
             </div>
         </div>
 
@@ -693,44 +694,48 @@
     function toggleLang() { lang = lang === 'ar' ? 'en' : 'ar'; localStorage.setItem('uec_lang', lang); applyLang(); }
     function handleLogout() { localStorage.clear(); window.location.reload(); }
     function resizeCanvas() { [canvas, newCanvas].forEach(c => { const r = Math.max(window.devicePixelRatio || 1, 1); if(c && c.offsetWidth > 0){ c.width = c.offsetWidth * r; c.height = c.offsetHeight * r; c.getContext("2d").scale(r, r); } }); }
-    
+
     /**
-     * دالة تصدير جرد المخزن المحدثة
-     * تعالج مشكلة google is not defined وتدير حالة الزر
+     * الدالة المسؤولة عن معالجة الضغط على زر التصدير
+     */
+    function handleExportClick() {
+        // التحقق مما إذا كنا داخل بيئة Google Apps Script
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+            exportInventoryToExcel();
+        } else {
+            // تنبيه في حالة التشغيل خارج بيئة جوجل (مثل المتصفح العادي)
+            alert(lang === 'ar' ? 
+                "⚠️ تنبيه: خاصية التصدير تعمل فقط عند تشغيل التطبيق من داخل Google Sheets.\nيرجى فتح التطبيق من رابط الـ Web App الخاص بك." : 
+                "⚠️ Warning: Export feature only works within Google Sheets environment.\nPlease open the app using your Web App URL.");
+        }
+    }
+
+    /**
+     * دالة تصدير جرد المخزن
      */
     function exportInventoryToExcel() {
         const btn = document.getElementById('btnExportStock');
-        if (!btn) return;
         const originalText = btn.innerText;
 
-        // التحقق من تحميل مكتبة Google Apps Script
-        if (typeof google === 'undefined' || !google.script || !google.script.run) {
-            alert(lang === 'ar' ? "خطأ: لم يتم تحميل مكتبة جوجل بعد. يرجى الانتظار ثانية والمحاولة مرة أخرى." : "Error: Google library not loaded yet. Please wait a moment and try again.");
-            return;
-        }
-
         btn.disabled = true;
-        btn.innerText = lang === 'ar' ? "جاري التجهيز..." : "Preparing...";
+        btn.innerText = lang === 'ar' ? "جاري التصدير..." : "Exporting...";
 
         google.script.run
             .withSuccessHandler(function(url) {
                 btn.disabled = false;
                 btn.innerText = originalText;
                 if (url) {
-                    var win = window.open(url, '_blank');
-                    if(!win) {
-                        alert(lang === 'ar' ? "يرجى السماح بالنوافذ المنبثقة (Pop-ups) لتحميل الملف" : "Please allow pop-ups to download the file");
-                    }
+                    window.open(url, '_blank');
                 } else {
-                    alert(lang === 'ar' ? "فشل في إنشاء الرابط" : "Failed to generate link");
+                    alert(lang === 'ar' ? "فشل في الحصول على رابط الملف" : "Failed to get file URL");
                 }
             })
             .withFailureHandler(function(err) {
                 btn.disabled = false;
                 btn.innerText = originalText;
-                alert((lang === 'ar' ? "حدث خطأ: " : "Error: ") + err.message);
+                alert((lang === 'ar' ? "خطأ في التصدير: " : "Export error: ") + err);
             })
-            .exportStockToExcel();
+            .exportStockToExcel(); // يجب أن تكون هذه الدالة موجودة في ملف .gs
     }
 
     window.onresize = resizeCanvas;
