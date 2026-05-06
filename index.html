@@ -6,7 +6,6 @@
     <title>UEC Assets Control</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
-    <!-- مكتبة تصدير ملفات الإكسل -->
     <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
     <style>
         :root { --blue: #003366; --gold: #C5A059; --white: #ffffff; --gray: #f4f7f6; }
@@ -34,7 +33,7 @@
         
         .items-block { border: 1px solid #ddd; padding: 15px; border-radius: 10px; margin-bottom: 15px; background: #fafafa; position: relative; }
         .btn-add-item { background: var(--gold); color: var(--blue); border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-bottom: 15px; }
-        .btn-remove-item { background: #d9534f; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: position: absolute; top: 10px; left: 10px; font-size: 0.7rem; }
+        .btn-remove-item { background: #d9534f; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; position: absolute; top: 10px; left: 10px; font-size: 0.7rem; }
 
         .signature-wrapper { border: 2px dashed #bbb; background: #fdfdfd; height: 140px; position: relative; margin: 5px 0; border-radius: 8px; }
         canvas { width: 100%; height: 100%; }
@@ -56,12 +55,11 @@
             #printSignaturesWrapper { display: flex !important; flex-direction: row !important; justify-content: space-between !important; align-items: flex-start !important; }
             #printSignaturesWrapper > div { flex: 1; max-width: 45%; text-align: center; }
             input, select, textarea { border: none !important; font-weight: bold; background: transparent !important; }
-            #auditResults { display: block !important; }
-            #auditResults .grid { display: block !important; }
-            #auditResults table { font-size: 10pt !important; }
         }
         .print-header { display: none; }
         .stock-info { background: #fff9eb; padding: 5px 10px; border-radius: 5px; border: 1px solid var(--gold); font-weight: bold; font-size: 0.85rem; display: flex; justify-content: space-between; margin-top: 5px; }
+        .low-stock { color: red !important; animation: blinker 1.5s linear infinite; }
+        @keyframes blinker { 50% { opacity: 0.5; } }
     </style>
 </head>
 <body>
@@ -198,6 +196,10 @@
                     <div id="currentStockDisplay" style="font-size: 0.75rem; color: var(--blue); margin-top: 5px; font-weight: bold;"></div>
                 </div>
                 <div>
+                    <label id="lblMinQty">الحد الأدنى (Alert at)</label>
+                    <input type="number" id="stkMinQty" placeholder="مثلاً: 2" value="2">
+                </div>
+                <div>
                     <label id="lblStkCons">هل الصنف مستهلك؟ (Consumable)</label>
                     <select id="stkConsumable">
                         <option value="no" id="optNo">لا (جهاز له S/N)</option>
@@ -248,10 +250,6 @@
                     <table class="asset-table"><thead><tr><th id="thT1">التاريخ</th><th id="thT2">النوع</th><th id="thT3">الجهاز</th><th>S/N</th><th id="thT4">الأدمن</th></tr></thead><tbody id="auditHistoryBody"></tbody></table>
                 </div>
             </div>
-            <div class="print-only" id="auditPrintSignature" style="display:none; margin-top:30px; text-align:left;">
-                <p style="font-weight:bold; margin-bottom:10px;">توقيع الموظف المعتمد:</p>
-                <img id="auditSignatureImg" style="max-height:100px; border:1px solid #eee; padding:5px;">
-            </div>
         </div>
     </div>
 </div>
@@ -281,7 +279,7 @@
             stockText: "الرصيد المتاح:", category: "التصنيف", qty: "الكمية",
             invTitle: "إدارة المخزن", stkCat: "الكاتوجري (Category)", stkItem: "اسم الصنف (Item Name)", 
             stkQty: "الكمية الجديدة", stkCons: "هل الصنف مستهلك؟ (Consumable)", optNo: "لا (جهاز له S/N)", 
-            optYes: "نعم (مثل الأقلام/الأوراق)", btnStkSave: "تحديث المخزون"
+            optYes: "نعم (مثل الأقلام/الأوراق)", btnStkSave: "تحديث المخزون", minQty: "الحد الأدنى"
         },
         en: { 
             formTab: "Forms", inventoryTab: "Stock", dashTab: "Statistics", searchPlace: "Employee ID to search...", btnSearch: "Search", 
@@ -295,7 +293,7 @@
             stockText: "Current Stock:", category: "Category", qty: "Quantity",
             invTitle: "Inventory Management", stkCat: "Category", stkItem: "Item Name", 
             stkQty: "New Quantity", stkCons: "Consumable?", optNo: "No (Device with S/N)", 
-            optYes: "Yes (e.g. Pens/Paper)", btnStkSave: "Update Stock"
+            optYes: "Yes (e.g. Pens/Paper)", btnStkSave: "Update Stock", minQty: "Min Qty"
         }
     };
 
@@ -333,6 +331,7 @@
         document.getElementById('lblStkItem').innerText = d.stkItem;
         document.getElementById('lblStkQty').innerText = d.stkQty;
         document.getElementById('lblStkCons').innerText = d.stkCons;
+        document.getElementById('lblMinQty').innerText = d.minQty;
         document.getElementById('optNo').innerText = d.optNo;
         document.getElementById('optYes').innerText = d.optYes;
         document.getElementById('btnSaveStock').innerText = d.btnStkSave;
@@ -414,7 +413,16 @@
         if(isConsumable) { snField.style.display = "none"; qtyField.style.display = "block"; snInput.required = false; }
         else { snField.style.display = "block"; qtyField.style.display = "none"; snInput.required = true; }
         const item = inventoryData.find(i => i.itemName === selected);
-        if(item) { stockContainer.style.visibility = "visible"; stockSpan.innerText = item.quantity; stockSpan.style.color = item.quantity < 3 ? "red" : "inherit"; }
+        if(item) { 
+            stockContainer.style.visibility = "visible"; 
+            stockSpan.innerText = item.quantity; 
+            // التنبيه باللون الأحمر إذا قل المخزون عن الحد الأدنى
+            if (parseInt(item.quantity) <= parseInt(item.minQty || 2)) {
+                stockSpan.classList.add('low-stock');
+            } else {
+                stockSpan.classList.remove('low-stock');
+            }
+        }
     }
 
     function filterAssetsByCategory() {
@@ -485,6 +493,7 @@
             display.innerText = (lang === 'ar' ? "الرصيد الحالي بالمخزن: " : "Current Stock: ") + item.quantity;
             document.getElementById('stkCategory').value = item.category;
             document.getElementById('stkConsumable').value = item.isConsumable;
+            document.getElementById('stkMinQty').value = item.minQty || 2;
         } else {
             display.innerText = "";
         }
@@ -493,8 +502,7 @@
     function addNewItem() {
         document.getElementById('stockForm').reset();
         document.getElementById('currentStockDisplay').innerText = "";
-        const promptMsg = lang === 'ar' ? "أدخل اسم الصنف الجديد:" : "Enter new item name:";
-        const newItem = prompt(promptMsg);
+        const newItem = prompt(lang === 'ar' ? "أدخل اسم الصنف الجديد:" : "Enter new item name:");
         if(newItem) {
             document.getElementById('stkItemName').value = newItem;
             document.getElementById('stkCategory').focus();
@@ -502,20 +510,13 @@
     }
 
     function addNewCategoryPrompt() {
-        const promptMsg = lang === 'ar' ? "أدخل اسم القسم الجديد (Category):" : "Enter new Category name:";
-        const newCat = prompt(promptMsg);
+        const newCat = prompt(lang === 'ar' ? "أدخل اسم القسم الجديد (Category):" : "Enter new Category name:");
         if(newCat) {
-            const catOptions = document.getElementById('catOptions');
-            const newOpt = document.createElement('option');
-            newOpt.value = newCat;
-            catOptions.appendChild(newOpt);
             document.getElementById('stkCategory').value = newCat;
-            const firstItemMsg = lang === 'ar' ? `تم إنشاء قسم "${newCat}".. يرجى إدخال أول صنف لهذا القسم الآن:` : `Category "${newCat}" created. Please enter the first item for this category:`;
-            const firstItem = prompt(firstItemMsg);
+            const firstItem = prompt(lang === 'ar' ? `تم إنشاء قسم "${newCat}".. يرجى إدخال أول صنف لهذا القسم الآن:` : `Category "${newCat}" created. Please enter the first item:`);
             if(firstItem) {
                 document.getElementById('stkItemName').value = firstItem;
                 document.getElementById('stkQty').focus();
-                alert(lang === 'ar' ? "رائع! الآن حدد الكمية واضغط 'تحديث المخزون' ليتم حفظ القسم والصنف معاً." : "Great! Now set quantity and click 'Update Stock' to save both.");
             }
         }
     }
@@ -523,21 +524,22 @@
     function saveStock() {
         const itemName = document.getElementById('stkItemName').value;
         const newQty = parseInt(document.getElementById('stkQty').value);
+        const minQty = parseInt(document.getElementById('stkMinQty').value);
         const payload = {
             action: 'updateStock',
             category: document.getElementById('stkCategory').value,
             itemName: itemName,
             newQty: newQty,
+            minQty: minQty, // إرسال الحد الأدنى للسيرفر
             isConsumable: document.getElementById('stkConsumable').value
         };
-        if(!payload.category || !payload.itemName || isNaN(newQty)) return alert(lang === 'ar' ? "يرجى ملء جميع الخانات بشكل صحيح" : "Please fill all fields correctly");
+        if(!payload.category || !payload.itemName || isNaN(newQty)) return alert("Fill all fields");
         const btn = document.getElementById('btnSaveStock');
         btn.disabled = true; btn.innerText = "...";
         fetch(`${SCRIPT_URL}`, { method: 'POST', body: JSON.stringify(payload) })
         .then(res => res.text()).then(() => {
             alert(lang === 'ar' ? "تم تحديث المخزون بنجاح!" : "Stock Updated Successfully!");
             document.getElementById('stockForm').reset();
-            document.getElementById('currentStockDisplay').innerText = "";
             getInventoryList();
             btn.disabled = false; btn.innerText = translations[lang].btnStkSave;
         });
@@ -572,73 +574,44 @@
 
     function auditEmployee() {
         const empID = document.getElementById('dashSearchID').value;
-        if(!empID) return alert(lang === 'ar' ? "يرجى إدخال ID" : "Please enter ID");
+        if(!empID) return alert("ID Required");
         fetch(`${SCRIPT_URL}?action=getEmployeeFullHistory`, { method: 'POST', body: JSON.stringify({empID}) })
         .then(res => res.json()).then(data => {
             currentAuditData = data;
             document.getElementById('auditResults').style.display = "block";
-            document.getElementById('btnPrintAudit').style.display = "inline-block";
             document.getElementById('auditEmpDisplayName').innerText = data.empName || "Unknown Employee";
             document.getElementById('auditEmpDisplayID').innerText = "ID: " + empID;
             document.getElementById('auditCurrentBody').innerHTML = data.current.length ? data.current.map(r => `<tr><td>${r[5]}</td><td>${r[6]}</td><td>${new Date(r[0]).toLocaleDateString()}</td></tr>`).join('') : '<tr><td colspan="3">N/A</td></tr>';
             document.getElementById('auditIssuedCount').innerText = data.stats.issued;
             document.getElementById('auditReturnedCount').innerText = data.stats.returned;
             document.getElementById('auditHistoryBody').innerHTML = data.history.map(h => `<tr><td>${new Date(h.date).toLocaleDateString()}</td><td style="color:${h.type.includes('Issue')?'green':'red'}">${h.type}</td><td>${h.asset}</td><td>${h.sn}</td><td>${h.admin}</td></tr>`).join('');
-            if(data.signature) { document.getElementById('auditSignatureImg').src = data.signature; }
         });
     }
 
-    function printAuditHistory() {
-        if(!currentAuditData) return;
-        document.getElementById('printPageTitle').innerText = "Employee Asset History | سجل عهدة موظف";
-        document.getElementById('auditPrintSignature').style.display = "block";
-        setTimeout(() => { window.print(); document.getElementById('auditPrintSignature').style.display = "none"; }, 500);
-    }
-
-    // --- دالة تصدير الإكسل المحدثة (تشمل التسليم والإجمالي) ---
     function exportInventoryToExcel() {
-        if (!inventoryData || inventoryData.length === 0) {
-            alert(lang === 'ar' ? "لا توجد بيانات بالمخزن لتصديرها" : "No inventory data to export");
-            return;
-        }
-
+        if (!inventoryData || inventoryData.length === 0) return alert("No data");
         const wb = XLSX.utils.book_new();
-        const uniqueCategories = [...new Set(inventoryData.map(i => i.category || (lang === 'ar' ? "غير مصنف" : "Uncategorized")))];
-
+        const uniqueCategories = [...new Set(inventoryData.map(i => i.category || "Uncategorized"))];
         uniqueCategories.forEach(cat => {
-            const catItems = inventoryData.filter(i => (i.category || (lang === 'ar' ? "غير مصنف" : "Uncategorized")) === cat);
-            
-            const dataToExport = catItems.map(item => {
-                // حسابات الكميات
-                const currentStock = parseInt(item.quantity) || 0;
-                const totalIn = parseInt(item.totalIn) || currentStock; // إجمالي ما دخل المخزن
-                const totalOut = parseInt(item.totalOut) || 0;          // إجمالي ما تم صرفه
-                
-                return {
-                    [lang === 'ar' ? "اسم الصنف" : "Item Name"]: item.itemName,
-                    [lang === 'ar' ? "الرصيد المتبقي الحالي" : "Current Stock Balance"]: currentStock,
-                    [lang === 'ar' ? "النوع" : "Type"]: item.isConsumable === 'yes' ? (lang === 'ar' ? "استهلاكي" : "Consumable") : (lang === 'ar' ? "جهاز بـ S/N" : "Device"),
-                    [lang === 'ar' ? "التصنيف" : "Category"]: item.category
-                };
-            });
-
+            const catItems = inventoryData.filter(i => (i.category || "Uncategorized") === cat);
+            const dataToExport = catItems.map(item => ({
+                [lang === 'ar' ? "اسم الصنف" : "Item Name"]: item.itemName,
+                [lang === 'ar' ? "إجمالي الوارد" : "Total Stock In"]: item.totalIn || item.quantity,
+                [lang === 'ar' ? "ما تم صرفه" : "Total Issued"]: item.totalOut || 0,
+                [lang === 'ar' ? "الرصيد المتبقي" : "Current Balance"]: item.quantity,
+                [lang === 'ar' ? "الحد الأدنى" : "Min Qty"]: item.minQty || 2, // إضافة الحد الأدنى في الإكسل
+                [lang === 'ar' ? "الحالة" : "Status"]: parseInt(item.quantity) <= parseInt(item.minQty || 2) ? (lang === 'ar' ? "منخفض!" : "Low!") : (lang === 'ar' ? "متوفر" : "OK")
+            }));
             const ws = XLSX.utils.json_to_sheet(dataToExport);
-            
-            // تحسين شكل الشيت (الاتجاه من اليمين لليسار إذا كانت اللغة عربية)
-            if(lang === 'ar') {
-                ws['!dir'] = 'rtl';
-            }
-
+            if(lang === 'ar') ws['!dir'] = 'rtl';
             XLSX.utils.book_append_sheet(wb, ws, cat.substring(0, 30)); 
         });
-
-        const fileName = `UEC_Inventory_Full_Report_${new Date().toLocaleDateString().replace(/\//g, '-')}.xlsx`;
-        XLSX.writeFile(wb, fileName);
+        XLSX.writeFile(wb, `UEC_Inventory_Report_${new Date().toLocaleDateString()}.xlsx`);
     }
 
     document.getElementById('assetForm').onsubmit = function(e) {
         e.preventDefault();
-        if(signaturePad.isEmpty() && !loadedSignature) return alert(lang === 'ar' ? "التوقيع إلزامي!" : "Signature Required!");
+        if(signaturePad.isEmpty() && !loadedSignature) return alert("Signature Required!");
         const btn = document.getElementById('saveBtn'); 
         btn.disabled = true; btn.innerText = "Saving...";
         const items = [];
@@ -662,8 +635,8 @@
             newSignature: newSignaturePad.toDataURL()
         };
         fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) })
-        .then(res => res.text()).then(t => {
-            alert(lang === 'ar' ? "تم حفظ جميع العمليات!" : "All items saved!");
+        .then(res => res.text()).then(() => {
+            alert(lang === 'ar' ? "تم الحفظ بنجاح!" : "Saved Successfully!");
             resetForm(); getInventoryList(); btn.disabled = false; btn.innerText = translations[lang].save;
         });
     };
