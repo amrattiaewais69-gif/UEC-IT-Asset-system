@@ -595,7 +595,7 @@
         setTimeout(() => { window.print(); document.getElementById('auditPrintSignature').style.display = "none"; }, 500);
     }
 
-    // --- دالة تصدير الإكسل الجديدة ---
+    // --- دالة تصدير الإكسل المحدثة (تشمل التسليم والإجمالي) ---
     function exportInventoryToExcel() {
         if (!inventoryData || inventoryData.length === 0) {
             alert(lang === 'ar' ? "لا توجد بيانات بالمخزن لتصديرها" : "No inventory data to export");
@@ -608,12 +608,21 @@
         uniqueCategories.forEach(cat => {
             const catItems = inventoryData.filter(i => (i.category || (lang === 'ar' ? "غير مصنف" : "Uncategorized")) === cat);
             
-            const dataToExport = catItems.map(item => ({
-                [lang === 'ar' ? "اسم الصنف" : "Item Name"]: item.itemName,
-                [lang === 'ar' ? "الرصيد المتاح" : "Quantity"]: item.quantity,
-                [lang === 'ar' ? "النوع" : "Type"]: item.isConsumable === 'yes' ? (lang === 'ar' ? "استهلاكي" : "Consumable") : (lang === 'ar' ? "جهاز بـ S/N" : "Device"),
-                [lang === 'ar' ? "التصنيف" : "Category"]: item.category
-            }));
+            const dataToExport = catItems.map(item => {
+                // حسابات الكميات
+                const currentStock = parseInt(item.quantity) || 0;
+                const totalIn = parseInt(item.totalIn) || currentStock; // إجمالي ما دخل المخزن
+                const totalOut = parseInt(item.totalOut) || 0;          // إجمالي ما تم صرفه
+                
+                return {
+                    [lang === 'ar' ? "اسم الصنف" : "Item Name"]: item.itemName,
+                    [lang === 'ar' ? "إجمالي الوارد" : "Total Stock In"]: totalIn,
+                    [lang === 'ar' ? "ما تم صرفه (توزيعه)" : "Total Delivered/Issued"]: totalOut,
+                    [lang === 'ar' ? "الرصيد المتبقي الحالي" : "Current Stock Balance"]: currentStock,
+                    [lang === 'ar' ? "النوع" : "Type"]: item.isConsumable === 'yes' ? (lang === 'ar' ? "استهلاكي" : "Consumable") : (lang === 'ar' ? "جهاز بـ S/N" : "Device"),
+                    [lang === 'ar' ? "التصنيف" : "Category"]: item.category
+                };
+            });
 
             const ws = XLSX.utils.json_to_sheet(dataToExport);
             
@@ -622,10 +631,10 @@
                 ws['!dir'] = 'rtl';
             }
 
-            XLSX.utils.book_append_sheet(wb, ws, cat.substring(0, 30)); // Sheet name max 31 chars
+            XLSX.utils.book_append_sheet(wb, ws, cat.substring(0, 30)); 
         });
 
-        const fileName = `UEC_Inventory_Report_${new Date().toLocaleDateString().replace(/\//g, '-')}.xlsx`;
+        const fileName = `UEC_Inventory_Full_Report_${new Date().toLocaleDateString().replace(/\//g, '-')}.xlsx`;
         XLSX.writeFile(wb, fileName);
     }
 
