@@ -6,6 +6,8 @@
     <title>UEC Assets Control</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+    <!-- مكتبة تصدير ملفات الإكسل -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
     <style>
         :root { --blue: #003366; --gold: #C5A059; --white: #ffffff; --gray: #f4f7f6; }
         body { font-family: 'Tajawal', sans-serif; background: var(--gray); margin: 0; color: #333; }
@@ -215,11 +217,12 @@
         </div>
 
         <div class="search-audit-box no-print" style="background:#eef2f3; padding:20px; border-radius:12px; margin-bottom:20px; border-right:8px solid var(--blue);">
-            <h4 id="lblAuditTitle" style="margin:0 0 10px 0; color:var(--blue);">🔍 استعلام عن سجل موظف:</h4>
-            <div style="display:flex; gap:10px;">
-                <input type="text" id="dashSearchID" placeholder="أدخل ID الموظف هنا..." style="margin-bottom:0;">
-                <button onclick="auditEmployee()" class="btn-gold" id="btnAudit" style="width:150px;">بحث شامل</button>
+            <h4 id="lblAuditTitle" style="margin:0 0 10px 0; color:var(--blue);">🔍 استعلام وتصدير التقارير:</h4>
+            <div style="display:flex; flex-wrap: wrap; gap:10px;">
+                <input type="text" id="dashSearchID" placeholder="أدخل ID الموظف هنا..." style="margin-bottom:0; flex:1; min-width: 200px;">
+                <button onclick="auditEmployee()" class="btn-gold" id="btnAudit" style="width:120px;">بحث شامل</button>
                 <button onclick="printAuditHistory()" class="btn-blue" id="btnPrintAudit" style="display:none; background:#28a745;">طباعة السجل</button>
+                <button onclick="exportInventoryToExcel()" class="btn-blue" id="btnExportExcel" style="background:#1d6f42;">📥 تصدير جرد المخزن (Excel)</button>
             </div>
         </div>
 
@@ -271,7 +274,7 @@
             trans: "نوع العملية", id: "الرقم الوظيفي", name: "اسم الموظف", type: "الجهاز / الصنف", sn: "S/N", specs: "المواصفات", 
             sign: "التوقيع:", save: "حفظ البيانات", print: "طباعة", langBtn: "English", assetsTitle: "العهدة الحالية",
             statTotal: "إجمالي الأجهزة", statIssued: "خارج (عهدة)", statStock: "داخل (مخزن)",
-            auditTitle: "🔍 استعلام عن سجل موظف:", auditPlace: "أدخل ID الموظف هنا...", btnAudit: "بحث شامل",
+            auditTitle: "🔍 استعلام وتصدير التقارير:", auditPlace: "أدخل ID الموظف هنا...", btnAudit: "بحث شامل",
             activeAssets: "📋 العهدة الحالية النشطة", summaryTitle: "📊 ملخص النشاط", timelineTitle: "🕒 السجل الزمني الكامل",
             issuedCount: "عمليات الاستلام:", returnedCount: "عمليات الإرجاع:",
             thDate: "التاريخ", thAsset: "الجهاز", thSelect: "اختيار", thAdmin: "الأدمن", thType: "النوع",
@@ -285,7 +288,7 @@
             trans: "Process Type", id: "Employee ID", name: "Employee Name", type: "Asset/Item Type", sn: "S/N", specs: "Specifications", 
             sign: "Signature:", save: "Save Data", print: "Print", langBtn: "العربية", assetsTitle: "Current Assets",
             statTotal: "Total Assets", statIssued: "Issued (Out)", statStock: "In Stock",
-            auditTitle: "🔍 Employee History Inquiry:", auditPlace: "Enter Emp ID here...", btnAudit: "Full Audit",
+            auditTitle: "🔍 Audit & Export Reports:", auditPlace: "Enter Emp ID here...", btnAudit: "Full Audit",
             activeAssets: "📋 Current Active Assets", summaryTitle: "📊 Activity Summary", timelineTitle: "🕒 Full Timeline History",
             issuedCount: "Total Issued:", returnedCount: "Total Returned:",
             thDate: "Date", thAsset: "Asset", thSelect: "Select", thAdmin: "Admin", thType: "Type",
@@ -456,7 +459,6 @@
             const catSelect = document.getElementById('categoryList');
             const uniqueCats = [...new Set(inventoryData.map(i => i.category))].filter(c => c && c !== "");
             
-            // تحديث خيارات الكاتوجري في datalist و select
             const catOptions = document.getElementById('catOptions');
             catOptions.innerHTML = uniqueCats.map(c => `<option value="${c}">`).join('');
             
@@ -503,14 +505,11 @@
         const promptMsg = lang === 'ar' ? "أدخل اسم القسم الجديد (Category):" : "Enter new Category name:";
         const newCat = prompt(promptMsg);
         if(newCat) {
-            // تحديث القائمة فوراً برمجياً
             const catOptions = document.getElementById('catOptions');
             const newOpt = document.createElement('option');
             newOpt.value = newCat;
             catOptions.appendChild(newOpt);
-            
             document.getElementById('stkCategory').value = newCat;
-            
             const firstItemMsg = lang === 'ar' ? `تم إنشاء قسم "${newCat}".. يرجى إدخال أول صنف لهذا القسم الآن:` : `Category "${newCat}" created. Please enter the first item for this category:`;
             const firstItem = prompt(firstItemMsg);
             if(firstItem) {
@@ -524,7 +523,6 @@
     function saveStock() {
         const itemName = document.getElementById('stkItemName').value;
         const newQty = parseInt(document.getElementById('stkQty').value);
-
         const payload = {
             action: 'updateStock',
             category: document.getElementById('stkCategory').value,
@@ -532,9 +530,7 @@
             newQty: newQty,
             isConsumable: document.getElementById('stkConsumable').value
         };
-
         if(!payload.category || !payload.itemName || isNaN(newQty)) return alert(lang === 'ar' ? "يرجى ملء جميع الخانات بشكل صحيح" : "Please fill all fields correctly");
-        
         const btn = document.getElementById('btnSaveStock');
         btn.disabled = true; btn.innerText = "...";
         fetch(`${SCRIPT_URL}`, { method: 'POST', body: JSON.stringify(payload) })
@@ -597,6 +593,40 @@
         document.getElementById('printPageTitle').innerText = "Employee Asset History | سجل عهدة موظف";
         document.getElementById('auditPrintSignature').style.display = "block";
         setTimeout(() => { window.print(); document.getElementById('auditPrintSignature').style.display = "none"; }, 500);
+    }
+
+    // --- دالة تصدير الإكسل الجديدة ---
+    function exportInventoryToExcel() {
+        if (!inventoryData || inventoryData.length === 0) {
+            alert(lang === 'ar' ? "لا توجد بيانات بالمخزن لتصديرها" : "No inventory data to export");
+            return;
+        }
+
+        const wb = XLSX.utils.book_new();
+        const uniqueCategories = [...new Set(inventoryData.map(i => i.category || (lang === 'ar' ? "غير مصنف" : "Uncategorized")))];
+
+        uniqueCategories.forEach(cat => {
+            const catItems = inventoryData.filter(i => (i.category || (lang === 'ar' ? "غير مصنف" : "Uncategorized")) === cat);
+            
+            const dataToExport = catItems.map(item => ({
+                [lang === 'ar' ? "اسم الصنف" : "Item Name"]: item.itemName,
+                [lang === 'ar' ? "الرصيد المتاح" : "Quantity"]: item.quantity,
+                [lang === 'ar' ? "النوع" : "Type"]: item.isConsumable === 'yes' ? (lang === 'ar' ? "استهلاكي" : "Consumable") : (lang === 'ar' ? "جهاز بـ S/N" : "Device"),
+                [lang === 'ar' ? "التصنيف" : "Category"]: item.category
+            }));
+
+            const ws = XLSX.utils.json_to_sheet(dataToExport);
+            
+            // تحسين شكل الشيت (الاتجاه من اليمين لليسار إذا كانت اللغة عربية)
+            if(lang === 'ar') {
+                ws['!dir'] = 'rtl';
+            }
+
+            XLSX.utils.book_append_sheet(wb, ws, cat.substring(0, 30)); // Sheet name max 31 chars
+        });
+
+        const fileName = `UEC_Inventory_Report_${new Date().toLocaleDateString().replace(/\//g, '-')}.xlsx`;
+        XLSX.writeFile(wb, fileName);
     }
 
     document.getElementById('assetForm').onsubmit = function(e) {
