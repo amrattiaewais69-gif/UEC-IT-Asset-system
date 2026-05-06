@@ -597,8 +597,6 @@
             const dataToExport = catItems.map(item => ({
                 [lang === 'ar' ? "اسم الصنف" : "Item Name"]: item.itemName,
                 [lang === 'ar' ? "إجمالي الوارد" : "Total Stock In"]: item.totalIn || item.quantity,
-                [lang === 'ar' ? "ما تم صرفه" : "Total Issued"]: item.totalOut || 0,
-                [lang === 'ar' ? "الرصيد المتبقي" : "Current Balance"]: item.quantity,
                 [lang === 'ar' ? "الحد الأدنى" : "Min Qty"]: item.minQty || 2, // إضافة الحد الأدنى في الإكسل
                 [lang === 'ar' ? "الحالة" : "Status"]: parseInt(item.quantity) <= parseInt(item.minQty || 2) ? (lang === 'ar' ? "منخفض!" : "Low!") : (lang === 'ar' ? "متوفر" : "OK")
             }));
