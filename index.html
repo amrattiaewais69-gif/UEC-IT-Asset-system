@@ -54,6 +54,7 @@
             #legalDisclaimer { display: block !important; }
             #auditResults { display: block !important; }
             #auditResults div { max-height: none !important; overflow: visible !important; }
+            #auditSignatureWrapper { display: block !important; margin-top: 20px; border-top: 1px solid #ddd; padding-top: 10px; }
         }
         .print-header { display: none; }
         .stock-info { background: #fff9eb; padding: 5px 10px; border-radius: 5px; border: 1px solid var(--gold); font-weight: bold; font-size: 0.85rem; display: flex; justify-content: space-between; margin-top: 5px; }
@@ -236,6 +237,12 @@
                 <div style="background:white; padding:15px; border-radius:10px; border:1px solid #eee;">
                     <h4 id="lblActiveAssets" style="color:var(--blue); border-bottom:2px solid var(--gold); padding-bottom:5px;">📋 العهدة الحالية النشطة</h4>
                     <table class="asset-table"><thead><tr><th id="thDev">الجهاز</th><th>S/N</th><th id="thDat">التاريخ</th></tr></thead><tbody id="auditCurrentBody"></tbody></table>
+                    
+                    <!-- خانة توقيع الموظف المضافة للسجل -->
+                    <div id="auditSignatureWrapper" style="display: none; margin-top: 15px;">
+                        <p style="font-weight: bold; font-size: 0.9rem; margin-bottom: 5px;">توقيع الموظف المعتمد:</p>
+                        <img id="auditPrintSignatureImg" style="max-height: 80px; border-bottom: 1px solid #000;">
+                    </div>
                 </div>
                 <div class="no-print" style="background:white; padding:15px; border-radius:10px; border:1px solid #eee;">
                     <h4 id="lblSummaryTitle" style="color:var(--blue); border-bottom:2px solid var(--gold); padding-bottom:5px;">📊 ملخص النشاط</h4>
@@ -575,13 +582,22 @@
         .then(res => res.json()).then(data => {
             currentAuditData = data;
             document.getElementById('auditResults').style.display = "block";
-            document.getElementById('btnPrintAudit').style.display = "block"; // إظهار زر الطباعة
+            document.getElementById('btnPrintAudit').style.display = "block";
             document.getElementById('auditEmpDisplayName').innerText = data.empName || "Unknown Employee";
             document.getElementById('auditEmpDisplayID').innerText = "ID: " + empID;
             document.getElementById('auditCurrentBody').innerHTML = data.current.length ? data.current.map(r => `<tr><td>${r[5]}</td><td>${r[6]}</td><td>${new Date(r[0]).toLocaleDateString()}</td></tr>`).join('') : '<tr><td colspan="3">N/A</td></tr>';
             document.getElementById('auditIssuedCount').innerText = data.stats.issued;
             document.getElementById('auditReturnedCount').innerText = data.stats.returned;
             document.getElementById('auditHistoryBody').innerHTML = data.history.map(h => `<tr><td>${new Date(h.date).toLocaleDateString()}</td><td style="color:${h.type.includes('Issue')?'green':'red'}">${h.type}</td><td>${h.asset}</td><td>${h.sn}</td><td>${h.admin}</td></tr>`).join('');
+            
+            // وضع توقيع الموظف المجلوب من قاعدة البيانات في خانة توقيع السجل
+            if(data.signature) {
+                document.getElementById('auditPrintSignatureImg').src = data.signature;
+                document.getElementById('auditSignatureWrapper').style.display = "block";
+            } else {
+                document.getElementById('auditSignatureWrapper').style.display = "none";
+            }
+            
             btnAudit.disabled = false; btnAudit.innerText = translations[lang].btnAudit;
         });
     }
