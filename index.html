@@ -616,8 +616,6 @@
                 
                 return {
                     [lang === 'ar' ? "اسم الصنف" : "Item Name"]: item.itemName,
-                    [lang === 'ar' ? "إجمالي الوارد" : "Total Stock In"]: totalIn,
-                    [lang === 'ar' ? "ما تم صرفه (توزيعه)" : "Total Delivered/Issued"]: totalOut,
                     [lang === 'ar' ? "الرصيد المتبقي الحالي" : "Current Stock Balance"]: currentStock,
                     [lang === 'ar' ? "النوع" : "Type"]: item.isConsumable === 'yes' ? (lang === 'ar' ? "استهلاكي" : "Consumable") : (lang === 'ar' ? "جهاز بـ S/N" : "Device"),
                     [lang === 'ar' ? "التصنيف" : "Category"]: item.category
