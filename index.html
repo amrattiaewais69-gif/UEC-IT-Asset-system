@@ -408,28 +408,51 @@
     }
 
     function updateStockDisplay(select) {
-        const row = select.closest('.items-block');
-        const selected = select.value;
-        const stockContainer = row.querySelector('.stockContainer');
-        const stockSpan = row.querySelector('.currentStock');
-        const snField = row.querySelector('.sn-field');
-        const qtyField = row.querySelector('.qty-field');
-        const snInput = row.querySelector('.itemSN');
-        if(!selected) { stockContainer.style.visibility = "hidden"; return; }
-        const isConsumable = select.options[select.selectedIndex].getAttribute('data-consumable') === 'yes';
-        if(isConsumable) { snField.style.display = "none"; qtyField.style.display = "block"; snInput.required = false; }
-        else { snField.style.display = "block"; qtyField.style.display = "none"; snInput.required = true; }
-        const item = inventoryData.find(i => i.itemName === selected);
-        if(item) { 
-            stockContainer.style.visibility = "visible"; 
-            stockSpan.innerText = item.quantity; 
-            if (parseInt(item.quantity) <= parseInt(item.minQty || 2)) {
-                stockSpan.classList.add('low-stock');
-            } else {
-                stockSpan.classList.remove('low-stock');
-            }
+    const row = select.closest('.items-block');
+    const selected = select.value;
+    const stockContainer = row.querySelector('.stockContainer');
+    const stockSpan = row.querySelector('.currentStock');
+    const snField = row.querySelector('.sn-field');
+    const qtyField = row.querySelector('.qty-field');
+    const snInput = row.querySelector('.itemSN');
+    
+    if(!selected) { 
+        stockContainer.style.visibility = "hidden"; 
+        return; 
+    }
+
+    const isConsumable = select.options[select.selectedIndex].getAttribute('data-consumable') === 'yes';
+    if(isConsumable) { 
+        snField.style.display = "none"; 
+        qtyField.style.display = "block"; 
+        snInput.required = false; 
+    } else { 
+        snField.style.display = "block"; 
+        qtyField.style.display = "none"; 
+        snInput.required = true; 
+    }
+
+    const item = inventoryData.find(i => i.itemName === selected);
+    if(item) { 
+        stockContainer.style.visibility = "visible"; 
+        stockSpan.innerText = item.quantity; 
+        
+        const currentQty = parseInt(item.quantity);
+        const minQty = parseInt(item.minQty || 2);
+
+        // إضافة التنبيه (Alert) عند اختيار الصنف
+        if (currentQty <= minQty) {
+            stockSpan.classList.add('low-stock');
+            // تنبيه للمستخدم برسالة واضحة
+            const alertMsg = lang === 'ar' 
+                ? `⚠️ تنبيه: رصيد "${selected}" منخفض جداً (${currentQty}). الحد الأدنى هو ${minQty}` 
+                : `⚠️ Warning: "${selected}" stock is low (${currentQty}). Minimum required is ${minQty}`;
+            alert(alertMsg);
+        } else {
+            stockSpan.classList.remove('low-stock');
         }
     }
+}
 
     function filterAssetsByCategory() {
         document.querySelectorAll('.assetList').forEach(select => {
